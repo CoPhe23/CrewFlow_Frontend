@@ -1,0 +1,43 @@
+:root {
+  --bg: #0B1210;
+  --bg2: #0F1A16;
+  --surface: #13221C;
+  --surface2: #173026;
+
+  --green: #152614;
+  --green2: #1E441E;
+  --green3: #2E6B3E;
+  --moss: #355E3B;
+
+  --stone: #252B28;
+  --slate: #34403B;
+  --soil: #2A1F17;
+  --sand: #CBBFA3;
+
+  --gold: #A38B4F;
+  --patina: #4E8B78;
+  --ember: #E08B3A;
+
+  --text: #F2F5F2;
+  --text2: #B7C9B8;
+  --muted: #7A8F7E;
+
+  --border: #1F332A;
+  --border2: #2B4A3B;
+
+  --ok: #3F8F5A;
+  --warn: #C6AD6F;
+  --bad: #8F3F3F;
+}
+#root {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+}

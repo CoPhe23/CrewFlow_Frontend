@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-import "../styles/login.css";
+import "../styles/register.css";
 
-export const Login = () => {
+export const Register = () => {
   const [showPw, setShowPw] = useState(false);
+  const [showConfirmPw, setShowConfirmPw] = useState(false);
 
   return (
-    <div className="auth">
+    <div className="auth registerAuth">
       <div className="atmo" aria-hidden="true">
         <div className="fog" />
         <div className="grain" />
@@ -24,11 +25,25 @@ export const Login = () => {
         <section className="card">
           <div className="cardInner">
             <header className="head">
-              <div className="title">Bejelentkezés</div>
-              <div className="sub">Egy helyen minden eseményed.</div>
+              <div className="title">Regisztráció</div>
+              <div className="sub">
+                Hozd létre a profilod, és kezdd el szervezni az eseményeidet.
+              </div>
             </header>
 
             <form className="form">
+              <label className="field">
+                <span className="label">Username</span>
+                <div className="inputWrap">
+                  <input
+                    className="inputEl"
+                    type="text"
+                    placeholder="pl. Felhasznalo"
+                    autoComplete="username"
+                  />
+                </div>
+              </label>
+
               <label className="field">
                 <span className="label">Email</span>
                 <div className="inputWrap">
@@ -49,8 +64,8 @@ export const Login = () => {
                     <input
                       className="inputEl"
                       type={showPw ? "text" : "password"}
-                      placeholder="••••••••"
-                      autoComplete="current-password"
+                      placeholder="Legalább 8 karakter"
+                      autoComplete="new-password"
                     />
                   </div>
 
@@ -65,26 +80,42 @@ export const Login = () => {
                 </div>
               </label>
 
-              <div className="row">
-                <label className="check">
-                  <input type="checkbox" />
-                  <span>Emlékezz rám</span>
-                </label>
+              <label className="field">
+                <span className="label">Jelszó újra</span>
+                <div className="pwRow">
+                  <div className="inputWrap pwInputWrap">
+                    <input
+                      className="inputEl"
+                      type={showConfirmPw ? "text" : "password"}
+                      placeholder="Írd be újra a jelszót"
+                      autoComplete="new-password"
+                    />
+                  </div>
 
-                <a className="link" href="#">
-                  Elfelejtetted?
-                </a>
-              </div>
+                  <button
+                    className="pwBtn"
+                    type="button"
+                    onClick={() => setShowConfirmPw((v) => !v)}
+                    aria-label={
+                      showConfirmPw
+                        ? "Jelszó megerősítés elrejtése"
+                        : "Jelszó megerősítés megjelenítése"
+                    }
+                  >
+                    {showConfirmPw ? "Elrejt" : "Mutat"}
+                  </button>
+                </div>
+              </label>
 
               <button className="btn" type="submit">
-                Belépés
+                Fiók létrehozása
                 <span className="btnDot" aria-hidden="true" />
               </button>
 
               <div className="foot">
-                <span>Még nincs fiókod?</span>
-                <a className="link" href="/register">
-                  Regisztráció
+                <span>Van már fiókod?</span>
+                <a className="link" href="/login">
+                  Bejelentkezés
                 </a>
               </div>
             </form>

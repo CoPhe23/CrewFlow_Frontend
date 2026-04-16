@@ -314,9 +314,14 @@
 }
 
 @media (max-width: 420px) {
+  .auth {
+    align-items: center;
+  }
+
   .wrap {
-    padding: 26px 14px 42px;
-    gap: 14px;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
   }
 
   .cardInner {

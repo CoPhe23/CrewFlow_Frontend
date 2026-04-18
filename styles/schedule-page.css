@@ -136,7 +136,98 @@
 }
 
 .schedule-mobile-actions-row {
-  display: contents;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.schedule-mobile-icon-button {
+  display: none;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border-radius: 14px;
+  border: 1px solid rgba(44, 74, 58, 0.62);
+  background: rgba(9, 15, 13, 0.42);
+  color: rgba(231, 236, 232, 0.98);
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.schedule-mobile-icon-button.active {
+  border-color: rgba(232, 193, 90, 0.28);
+  background: rgba(14, 22, 19, 0.7);
+  box-shadow: 0 0 0 1px rgba(232, 193, 90, 0.08);
+}
+
+.schedule-mobile-icon-button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(232, 193, 90, 0.24);
+}
+
+.schedule-mini-icon {
+  width: 22px;
+  height: 22px;
+  position: relative;
+  display: block;
+}
+
+.schedule-mini-icon--tasks {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+
+.schedule-mini-icon--tasks span {
+  display: block;
+  width: 16px;
+  height: 2px;
+  border-radius: 999px;
+  margin: 0 auto;
+  background: linear-gradient(180deg, rgba(232, 193, 90, 0.92), rgba(46, 107, 62, 0.92));
+}
+
+.schedule-mini-icon--locations span:nth-child(1) {
+  position: absolute;
+  inset: 2px auto auto 4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px 999px 999px 0;
+  transform: rotate(-45deg);
+  background: linear-gradient(180deg, rgba(232, 193, 90, 0.92), rgba(46, 107, 62, 0.92));
+}
+
+.schedule-mini-icon--locations span:nth-child(2) {
+  position: absolute;
+  top: 8px;
+  left: 9px;
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(9, 15, 13, 0.95);
+}
+
+.schedule-mini-icon--participants span:nth-child(1) {
+  position: absolute;
+  top: 3px;
+  left: 7px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(232, 193, 90, 0.92), rgba(46, 107, 62, 0.92));
+}
+
+.schedule-mini-icon--participants span:nth-child(2) {
+  position: absolute;
+  left: 3px;
+  bottom: 2px;
+  width: 16px;
+  height: 9px;
+  border-radius: 999px 999px 6px 6px;
+  background: linear-gradient(180deg, rgba(232, 193, 90, 0.92), rgba(46, 107, 62, 0.92));
 }
 
 .schedule-overview {
@@ -756,7 +847,7 @@
   .schedule-mobile-actions-row {
     width: 100%;
     display: grid;
-    grid-template-columns: minmax(0, 1.25fr) repeat(3, 56px);
+    grid-template-columns: minmax(0, 1fr) repeat(3, 48px);
     align-items: center;
     gap: 10px;
   }
@@ -764,8 +855,8 @@
   .schedule-create-button {
     width: 100%;
     min-width: 0;
-    height: 44px;
-    padding: 0 14px;
+    height: 48px;
+    padding: 0 16px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -773,96 +864,15 @@
     border-radius: 14px;
   }
 
+  .schedule-mobile-icon-button {
+    display: inline-flex;
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+  }
+
   .schedule-overview {
-    display: contents;
-  }
-
-  .overview-card {
-    width: 56px;
-    min-width: 56px;
-    height: 56px;
-    min-height: 56px;
-    padding: 0;
-    margin: 0;
-    border-radius: 16px;
-    display: grid;
-    place-items: center;
-    padding-left: 15px;
-  }
-
-  .overview-card p,
-  .overview-card h2 {
     display: none;
-  }
-
-  .overview-card__icon {
-    width: 24px;
-    height: 24px;
-    display: grid;
-    place-items: center;
-  }
-
-  .overview-card__icon.tasks {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 3px;
-  }
-
-  .overview-card__icon.tasks span {
-    display: block;
-    width: 16px;
-    height: 3px;
-    border-radius: 999px;
-    background: linear-gradient(180deg, rgba(232, 193, 90, 0.92), rgba(46, 107, 62, 0.92));
-  }
-
-  .overview-card__icon.participants {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 3px;
-  }
-
-  .overview-card__icon.participants span:nth-child(1) {
-    display: block;
-    width: 7px;
-    height: 7px;
-    border-radius: 999px;
-    background: linear-gradient(180deg, rgba(232, 193, 90, 0.92), rgba(46, 107, 62, 0.92));
-  }
-
-  .overview-card__icon.participants span:nth-child(2) {
-    display: block;
-    width: 16px;
-    height: 8px;
-    border-radius: 999px 999px 6px 6px;
-    background: linear-gradient(180deg, rgba(232, 193, 90, 0.92), rgba(46, 107, 62, 0.92));
-  }
-
-  .overview-card__icon.locations {
-    position: relative;
-    display: grid;
-    place-items: center;
-  }
-
-  .overview-card__icon.locations span:nth-child(1) {
-    display: block;
-    width: 14px;
-    height: 14px;
-    border-radius: 999px 999px 999px 0;
-    transform: rotate(-45deg);
-    background: linear-gradient(180deg, rgba(232, 193, 90, 0.92), rgba(46, 107, 62, 0.92));
-  }
-
-  .overview-card__icon.locations span:nth-child(2) {
-    position: absolute;
-    width: 5px;
-    height: 5px;
-    border-radius: 999px;
-    background: rgba(9, 15, 13, 0.95);
   }
 
   .insight-panel {

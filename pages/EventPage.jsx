@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import "../styles/EventPage.css";
+import { backdropFade, fadeUp, pageMotion, popIn, tabPanel } from "../lib/motion";
 
 export default function EventPage() {
   const [activeTab, setActiveTab] = useState("wall");
@@ -109,9 +111,15 @@ export default function EventPage() {
   }
 
   return (
-    <main className="event-page">
-      <div className="event-shell">
-        <header className="event-header">
+    <motion.main
+      className="event-page"
+      variants={pageMotion}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+    >
+      <motion.div className="event-shell" variants={fadeUp}>
+        <motion.header className="event-header" variants={fadeUp}>
           <div className="event-header__left">
             <Link to="/home" className="event-back-button" aria-label="Vissza a főoldalra">
               ←
@@ -124,23 +132,28 @@ export default function EventPage() {
           </div>
 
           <div className="event-header__right">
-            <button
+            <motion.button
               className="event-menu-button"
               onClick={() => setMenuOpen((prev) => !prev)}
               aria-label="Esemény műveletek"
+              whileTap={{ scale: 0.96 }}
             >
               •••
-            </button>
+            </motion.button>
           </div>
-        </header>
+        </motion.header>
 
-        <section className="event-summary-card">
+        <motion.section className="event-summary-card" variants={fadeUp}>
           <div className="event-summary-card__top">
-            <div className="event-summary-icon">
+            <motion.div
+              className="event-summary-icon"
+              animate={{ y: [0, -3, 0] }}
+              transition={{ duration: 4.6, repeat: Infinity, ease: "easeInOut" }}
+            >
               <span />
               <span />
               <span />
-            </div>
+            </motion.div>
 
             <div className="event-summary-meta">
               <p>Esemény adatai</p>
@@ -149,270 +162,375 @@ export default function EventPage() {
           </div>
 
           <p className="event-summary-description">{event.description}</p>
-        </section>
+        </motion.section>
 
-        <div className="event-tabs">
-          <button
+        <motion.div className="event-tabs" variants={fadeUp}>
+          <motion.button
             className={activeTab === "wall" ? "event-tab active" : "event-tab"}
             onClick={() => setActiveTab("wall")}
+            whileTap={{ scale: 0.97 }}
           >
             Fal
-          </button>
+          </motion.button>
 
-          <button
+          <motion.button
             className={activeTab === "chat" ? "event-tab active" : "event-tab"}
             onClick={() => setActiveTab("chat")}
+            whileTap={{ scale: 0.97 }}
           >
             Chat
-          </button>
+          </motion.button>
 
-          <button
+          <motion.button
             className={activeTab === "participants" ? "event-tab active" : "event-tab"}
             onClick={() => setActiveTab("participants")}
+            whileTap={{ scale: 0.97 }}
           >
             Résztvevők
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
 
-        {menuOpen && (
-          <>
-            <button
-              className="event-dropdown-backdrop"
-              onClick={() => setMenuOpen(false)}
-              aria-label="Bezárás"
-            />
+        <AnimatePresence>
+          {menuOpen && (
+            <>
+              <motion.button
+                className="event-dropdown-backdrop"
+                onClick={() => setMenuOpen(false)}
+                aria-label="Bezárás"
+                variants={backdropFade}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              />
 
-            <div className="event-dropdown">
-              {event.canManage && (
-                <button
-                  onClick={() => {
-                    setModalType("rename");
-                    setMenuOpen(false);
-                  }}
-                >
-                  Esemény nevének szerkesztése
-                </button>
-              )}
-
-              <button
-                onClick={() => {
-                  setModalType("leave");
-                  setMenuOpen(false);
-                }}
+              <motion.div
+                className="event-dropdown"
+                variants={popIn}
+                initial="initial"
+                animate="animate"
+                exit="exit"
               >
-                Kilépés az eseményből
-              </button>
+                {event.canManage && (
+                  <motion.button
+                    whileTap={{ scale: 0.985 }}
+                    onClick={() => {
+                      setModalType("rename");
+                      setMenuOpen(false);
+                    }}
+                  >
+                    Esemény nevének szerkesztése
+                  </motion.button>
+                )}
 
-              {event.canManage && (
-                <button
-                  className="danger-option"
+                <motion.button
+                  whileTap={{ scale: 0.985 }}
                   onClick={() => {
-                    setModalType("delete");
+                    setModalType("leave");
                     setMenuOpen(false);
                   }}
                 >
-                  Esemény törlése
-                </button>
-              )}
-            </div>
-          </>
-        )}
+                  Kilépés az eseményből
+                </motion.button>
 
-        {activeTab === "wall" && (
-          <section className="event-content">
-            <Link to={`/event/${event.id}/schedule`} className="pinned-schedule-card">
-              <div className="pinned-schedule-card__top">
-                <div className="pinned-schedule-icon">
-                  <div className="schedule-mini-graphic">
-                    <span />
-                    <span />
-                    <span />
-                  </div>
-                </div>
+                {event.canManage && (
+                  <motion.button
+                    className="danger-option"
+                    whileTap={{ scale: 0.985 }}
+                    onClick={() => {
+                      setModalType("delete");
+                      setMenuOpen(false);
+                    }}
+                  >
+                    Esemény törlése
+                  </motion.button>
+                )}
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
 
-                <div>
-                  <p>Pinelt</p>
-                  <h2>Beosztás</h2>
-                </div>
-              </div>
-
-              <div className="schedule-hero">
-                <div className="schedule-hero__grid">
-                  <div className="schedule-chip">Beléptetés</div>
-                  <div className="schedule-chip">Pakolás</div>
-                  <div className="schedule-chip">Dekor</div>
-                  <div className="schedule-chip">Zene</div>
-                </div>
-
-                <div className="schedule-hero__lines">
-                  <span />
-                  <span />
-                  <span />
-                </div>
-              </div>
-
-              <div className="pinned-schedule-card__footer">
-                <span>Megnyitás</span>
-                <span>→</span>
-              </div>
-            </Link>
-
-            <div className="post-list">
-              {posts.map((post) => (
-                <article className="post-card" key={post.id}>
-                  <div className="post-card__top">
-                    <div>
-                      <h3>{post.author}</h3>
-                      <p>{post.role}</p>
+        <AnimatePresence mode="wait">
+          {activeTab === "wall" && (
+            <motion.section
+              key="wall"
+              className="event-content"
+              variants={tabPanel}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+            >
+              <motion.div whileHover={{ y: -3, scale: 1.008 }} whileTap={{ scale: 0.992 }}>
+                <Link to={`/event/${event.id}/schedule`} className="pinned-schedule-card">
+                  <div className="pinned-schedule-card__top">
+                    <div className="pinned-schedule-icon">
+                      <div className="schedule-mini-graphic">
+                        <span />
+                        <span />
+                        <span />
+                      </div>
                     </div>
 
-                    <span>{post.time}</span>
+                    <div>
+                      <p>Pinelt</p>
+                      <h2>Beosztás</h2>
+                    </div>
                   </div>
 
-                  <div className="post-card__body">
-                    <p>{post.text}</p>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-        )}
+                  <div className="schedule-hero">
+                    <div className="schedule-hero__grid">
+                      <div className="schedule-chip">Beléptetés</div>
+                      <div className="schedule-chip">Pakolás</div>
+                      <div className="schedule-chip">Dekor</div>
+                      <div className="schedule-chip">Zene</div>
+                    </div>
 
-        {activeTab === "chat" && (
-          <section className="chat-section">
-            <div className="chat-messages">
-              {chatMessages.map((message) => (
-                <div
-                  key={message.id}
-                  className={message.own ? "chat-bubble own" : "chat-bubble"}
-                >
-                  <div className="chat-bubble__meta">
-                    <span>{message.author}</span>
-                    <span>{message.time}</span>
+                    <div className="schedule-hero__lines">
+                      <span />
+                      <span />
+                      <span />
+                    </div>
                   </div>
 
-                  <p>{message.text}</p>
-                </div>
-              ))}
-            </div>
+                  <div className="pinned-schedule-card__footer">
+                    <span>Megnyitás</span>
+                    <span>→</span>
+                  </div>
+                </Link>
+              </motion.div>
 
-            <form className="chat-input-bar">
-              <input type="text" placeholder="Üzenet írása..." />
-              <button type="submit">Küldés</button>
-            </form>
-          </section>
-        )}
+              <div className="post-list">
+                {posts.map((post, index) => (
+                  <motion.article
+                    className="post-card"
+                    key={post.id}
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      duration: 0.28,
+                      delay: 0.04 + index * 0.06,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
+                  >
+                    <div className="post-card__top">
+                      <div>
+                        <h3>{post.author}</h3>
+                        <p>{post.role}</p>
+                      </div>
 
-        {activeTab === "participants" && (
-          <section className="participants-section">
-            <div className="participants-header-card">
-              <div>
-                <p>Tagok</p>
-                <h2>Résztvevők</h2>
+                      <span>{post.time}</span>
+                    </div>
+
+                    <div className="post-card__body">
+                      <p>{post.text}</p>
+                    </div>
+                  </motion.article>
+                ))}
+              </div>
+            </motion.section>
+          )}
+
+          {activeTab === "chat" && (
+            <motion.section
+              key="chat"
+              className="chat-section"
+              variants={tabPanel}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+            >
+              <div className="chat-messages">
+                {chatMessages.map((message, index) => (
+                  <motion.div
+                    key={message.id}
+                    className={message.own ? "chat-bubble own" : "chat-bubble"}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.22, delay: index * 0.04 }}
+                  >
+                    <div className="chat-bubble__meta">
+                      <span>{message.author}</span>
+                      <span>{message.time}</span>
+                    </div>
+
+                    <p>{message.text}</p>
+                  </motion.div>
+                ))}
               </div>
 
-              <div className="participants-count">{event.participantCount} fő</div>
-            </div>
+              <form className="chat-input-bar">
+                <input type="text" placeholder="Üzenet írása..." />
+                <motion.button type="submit" whileTap={{ scale: 0.97 }}>
+                  Küldés
+                </motion.button>
+              </form>
+            </motion.section>
+          )}
 
-            <div className="participants-list">
-              {participants.map((participant) => (
-                <article className="participant-card" key={participant.id}>
-                  <div className="participant-avatar">
-                    {participant.name.slice(0, 1)}
-                  </div>
+          {activeTab === "participants" && (
+            <motion.section
+              key="participants"
+              className="participants-section"
+              variants={tabPanel}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+            >
+              <div className="participants-header-card">
+                <div>
+                  <p>Tagok</p>
+                  <h2>Résztvevők</h2>
+                </div>
 
-                  <div className="participant-main">
-                    <h3>{participant.name}</h3>
-                    <p>{participant.role}</p>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-        )}
+                <div className="participants-count">{event.participantCount} fő</div>
+              </div>
 
-        {modalType && (
-          <>
-            <button className="modal-backdrop" onClick={closeModal} aria-label="Bezárás" />
+              <div className="participants-list">
+                {participants.map((participant, index) => (
+                  <motion.article
+                    className="participant-card"
+                    key={participant.id}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.24, delay: index * 0.04 }}
+                  >
+                    <div className="participant-avatar">{participant.name.slice(0, 1)}</div>
 
-            <div className="modal-card">
-              {modalType === "rename" && (
-                <>
-                  <div className="modal-head">
-                    <p>Szerkesztés</p>
-                    <h3>Esemény átnevezése</h3>
-                  </div>
+                    <div className="participant-main">
+                      <h3>{participant.name}</h3>
+                      <p>{participant.role}</p>
+                    </div>
+                  </motion.article>
+                ))}
+              </div>
+            </motion.section>
+          )}
+        </AnimatePresence>
 
-                  <form onSubmit={handleRenameSubmit} className="modal-form">
-                    <input
-                      type="text"
-                      value={editedName}
-                      onChange={(e) => setEditedName(e.target.value)}
-                      placeholder="Új eseménynév"
-                      maxLength={60}
-                    />
+        <AnimatePresence>
+          {modalType && (
+            <>
+              <motion.button
+                className="modal-backdrop"
+                onClick={closeModal}
+                aria-label="Bezárás"
+                variants={backdropFade}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              />
+
+              <motion.div
+                className="modal-card"
+                variants={popIn}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              >
+                {modalType === "rename" && (
+                  <>
+                    <div className="modal-head">
+                      <p>Szerkesztés</p>
+                      <h3>Esemény átnevezése</h3>
+                    </div>
+
+                    <form onSubmit={handleRenameSubmit} className="modal-form">
+                      <input
+                        type="text"
+                        value={editedName}
+                        onChange={(e) => setEditedName(e.target.value)}
+                        placeholder="Új eseménynév"
+                        maxLength={60}
+                      />
+
+                      <div className="modal-actions">
+                        <motion.button
+                          type="button"
+                          className="ghost-button"
+                          onClick={closeModal}
+                          whileTap={{ scale: 0.985 }}
+                        >
+                          Mégse
+                        </motion.button>
+                        <motion.button
+                          type="submit"
+                          className="primary-button"
+                          whileTap={{ scale: 0.985 }}
+                        >
+                          Mentés
+                        </motion.button>
+                      </div>
+                    </form>
+                  </>
+                )}
+
+                {modalType === "leave" && (
+                  <>
+                    <div className="modal-head">
+                      <p>Kilépés</p>
+                      <h3>Biztosan kilépsz ebből az eseményből?</h3>
+                    </div>
+
+                    <p className="modal-text">
+                      A későbbiekben csak új meghívókóddal tudsz majd visszacsatlakozni.
+                    </p>
 
                     <div className="modal-actions">
-                      <button type="button" className="ghost-button" onClick={closeModal}>
+                      <motion.button
+                        type="button"
+                        className="ghost-button"
+                        onClick={closeModal}
+                        whileTap={{ scale: 0.985 }}
+                      >
                         Mégse
-                      </button>
-                      <button type="submit" className="primary-button">
-                        Mentés
-                      </button>
+                      </motion.button>
+                      <motion.button
+                        type="button"
+                        className="danger-button"
+                        onClick={handleLeaveEvent}
+                        whileTap={{ scale: 0.985 }}
+                      >
+                        Kilépés
+                      </motion.button>
                     </div>
-                  </form>
-                </>
-              )}
+                  </>
+                )}
 
-              {modalType === "leave" && (
-                <>
-                  <div className="modal-head">
-                    <p>Kilépés</p>
-                    <h3>Biztosan kilépsz?</h3>
-                  </div>
+                {modalType === "delete" && (
+                  <>
+                    <div className="modal-head">
+                      <p>Törlés</p>
+                      <h3>Biztosan törölni szeretnéd az eseményt?</h3>
+                    </div>
 
-                  <div className="modal-text-block">
-                    Ezzel kilépsz az eseményből. Később csak új meghívókóddal tudsz
-                    visszacsatlakozni.
-                  </div>
+                    <p className="modal-text">
+                      Ez a művelet később backend oldalon végleges törléshez fog kapcsolódni.
+                    </p>
 
-                  <div className="modal-actions">
-                    <button type="button" className="ghost-button" onClick={closeModal}>
-                      Mégse
-                    </button>
-                    <button type="button" className="danger-button" onClick={handleLeaveEvent}>
-                      Kilépés
-                    </button>
-                  </div>
-                </>
-              )}
-
-              {modalType === "delete" && (
-                <>
-                  <div className="modal-head">
-                    <p>Törlés</p>
-                    <h3>Biztosan törlöd az eseményt?</h3>
-                  </div>
-
-                  <div className="modal-text-block">
-                    Ez a művelet később nem vonható vissza. Az esemény összes adata
-                    törlődni fog.
-                  </div>
-
-                  <div className="modal-actions">
-                    <button type="button" className="ghost-button" onClick={closeModal}>
-                      Mégse
-                    </button>
-                    <button type="button" className="danger-button" onClick={handleDeleteEvent}>
-                      Törlés
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          </>
-        )}
-      </div>
-    </main>
+                    <div className="modal-actions">
+                      <motion.button
+                        type="button"
+                        className="ghost-button"
+                        onClick={closeModal}
+                        whileTap={{ scale: 0.985 }}
+                      >
+                        Mégse
+                      </motion.button>
+                      <motion.button
+                        type="button"
+                        className="danger-button"
+                        onClick={handleDeleteEvent}
+                        whileTap={{ scale: 0.985 }}
+                      >
+                        Törlés
+                      </motion.button>
+                    </div>
+                  </>
+                )}
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </motion.main>
   );
 }

@@ -1,33 +1,36 @@
 import { useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import "../styles/home.css";
+import { backdropFade, fadeUp, pageMotion, popIn } from "../lib/motion";
 
 export default function Home() {
   const [events, setEvents] = useState([
-  {
-    id: 1,
-    title: "Tavaszi Iskolabál",
-    code: "Q7M4X2",
-    members: 18,
-    role: "Szervező",
-    iconType: "spark",
-  },
-  {
-    id: 2,
-    title: "DÖK Gyűlés",
-    code: "R9K2P1",
-    members: 9,
-    role: "Tag",
-    iconType: "grid",
-  },
-  {
-    id: 3,
-    title: "Aftermovie Forgatás",
-    code: "F8N2L4",
-    members: 6,
-    role: "Admin",
-    iconType: "pulse",
-  },
-]);
+    {
+      id: 1,
+      title: "Tavaszi Iskolabál",
+      code: "Q7M4X2",
+      members: 18,
+      role: "Szervező",
+      iconType: "spark",
+    },
+    {
+      id: 2,
+      title: "DÖK Gyűlés",
+      code: "R9K2P1",
+      members: 9,
+      role: "Tag",
+      iconType: "grid",
+    },
+    {
+      id: 3,
+      title: "Aftermovie Forgatás",
+      code: "F8N2L4",
+      members: 6,
+      role: "Admin",
+      iconType: "pulse",
+    },
+  ]);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [modalType, setModalType] = useState("");
@@ -61,12 +64,14 @@ export default function Home() {
     e.preventDefault();
     if (!joinCode.trim()) return;
 
+    const iconTypes = ["spark", "grid", "pulse"];
     const newEvent = {
       id: Date.now(),
       title: `Csatlakozott esemény (${joinCode.trim().toUpperCase()})`,
       code: joinCode.trim().toUpperCase(),
       members: 12,
       role: "Tag",
+      iconType: iconTypes[events.length % iconTypes.length],
     };
 
     setEvents((prev) => [...prev, newEvent]);
@@ -78,6 +83,7 @@ export default function Home() {
     if (!eventName.trim()) return;
 
     const randomCode = Math.random().toString(36).slice(2, 8).toUpperCase();
+    const iconTypes = ["spark", "grid", "pulse"];
 
     const newEvent = {
       id: Date.now(),
@@ -85,6 +91,7 @@ export default function Home() {
       code: randomCode,
       members: 1,
       role: "Tulajdonos",
+      iconType: iconTypes[events.length % iconTypes.length],
     };
 
     setEvents((prev) => [...prev, newEvent]);
@@ -92,66 +99,94 @@ export default function Home() {
   }
 
   return (
-    <main className="home-page">
-      <div className="home-shell">
-        <header className="home-topbar">
+    <motion.main
+      className="home-page"
+      variants={pageMotion}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+    >
+      <motion.div className="home-shell" variants={fadeUp}>
+        <motion.header className="home-topbar" variants={fadeUp}>
           <div>
             <p className="home-eyebrow">CrewFlow</p>
             <h1>{titleText}</h1>
           </div>
-        </header>
+        </motion.header>
 
         {hasEvents ? (
-          <section className="event-grid">
-            {events.map((event) => (
-              <article className="event-card" key={event.id}>
-                <div className="event-card__top">
-                  <span className="event-role">{event.role}</span>
-                  <span className="event-members">{event.members} fő</span>
-                </div>
+          <motion.section className="event-grid" variants={fadeUp}>
+            {events.map((event, index) => (
+              <motion.article
+                className="event-card"
+                key={event.id}
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.34,
+                  delay: 0.05 + index * 0.06,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
+                whileHover={{ y: -4, scale: 1.012 }}
+                whileTap={{ scale: 0.992 }}
+              >
+                <Link
+                  to={`/event/${event.id}`}
+                  style={{ textDecoration: "none", color: "inherit", display: "contents" }}
+                >
+                  <div className="event-card__top">
+                    <span className="event-role">{event.role}</span>
+                    <span className="event-members">{event.members} fő</span>
+                  </div>
 
-                <div className="event-card__body">
-  <div className="event-card__icon">
-    {event.iconType === "spark" && (
-      <div className="icon-spark">
-        <span />
-        <span />
-        <span />
-      </div>
-    )}
+                  <div className="event-card__body">
+                    <div className="event-card__icon">
+                      {event.iconType === "spark" && (
+                        <div className="icon-spark">
+                          <span />
+                          <span />
+                          <span />
+                        </div>
+                      )}
 
-    {event.iconType === "grid" && (
-      <div className="icon-grid">
-        <span />
-        <span />
-        <span />
-        <span />
-      </div>
-    )}
+                      {event.iconType === "grid" && (
+                        <div className="icon-grid">
+                          <span />
+                          <span />
+                          <span />
+                          <span />
+                        </div>
+                      )}
 
-    {event.iconType === "pulse" && (
-      <div className="icon-pulse">
-        <span />
-        <span />
-        <span />
-      </div>
-    )}
-  </div>
+                      {event.iconType === "pulse" && (
+                        <div className="icon-pulse">
+                          <span />
+                          <span />
+                          <span />
+                        </div>
+                      )}
+                    </div>
 
-  <h2>{event.title}</h2>
-  <p>Kód: {event.code}</p>
-</div>
-              </article>
+                    <h2>{event.title}</h2>
+                    <p>Kód: {event.code}</p>
+                  </div>
+                </Link>
+              </motion.article>
             ))}
-          </section>
+          </motion.section>
         ) : (
-          <section className="empty-state">
-            <div className="empty-graphic" aria-hidden="true">
+          <motion.section className="empty-state" variants={fadeUp}>
+            <motion.div
+              className="empty-graphic"
+              aria-hidden="true"
+              animate={{ y: [0, -5, 0] }}
+              transition={{ duration: 5.8, repeat: Infinity, ease: "easeInOut" }}
+            >
               <div className="empty-graphic__circle" />
               <div className="empty-graphic__spark spark-1" />
               <div className="empty-graphic__spark spark-2" />
               <div className="empty-graphic__spark spark-3" />
-            </div>
+            </motion.div>
 
             <h2>Még nem vagy tagja egy eseménynek sem</h2>
             <p>
@@ -159,113 +194,155 @@ export default function Home() {
               kattintással.
             </p>
 
-            <button
+            <motion.button
               className="empty-plus-button"
               onClick={() => setMenuOpen((prev) => !prev)}
               aria-label="Esemény létrehozása vagy csatlakozás"
+              whileHover={{ y: -2, scale: 1.03 }}
+              whileTap={{ scale: 0.96 }}
             >
               +
-            </button>
-          </section>
+            </motion.button>
+          </motion.section>
         )}
 
         {hasEvents && (
-          <div className="floating-action-wrapper">
-            <button
+          <motion.div className="floating-action-wrapper" variants={fadeUp}>
+            <motion.button
               className="floating-action-button"
               onClick={() => setMenuOpen((prev) => !prev)}
               aria-label="Új esemény vagy csatlakozás"
+              whileHover={{ y: -2, scale: 1.03 }}
+              whileTap={{ scale: 0.96 }}
             >
               +
-            </button>
-          </div>
+            </motion.button>
+          </motion.div>
         )}
 
-        {menuOpen && (
-          <>
-            <button
-              className="menu-backdrop"
-              aria-label="Bezárás"
-              onClick={() => setMenuOpen(false)}
-            />
-            <div className={`action-menu ${hasEvents ? "action-menu--fab" : ""}`}>
-              <button onClick={openJoinModal}>Csatlakozás kóddal</button>
-              <button onClick={openCreateModal}>Új esemény létrehozása</button>
-            </div>
-          </>
-        )}
+        <AnimatePresence>
+          {menuOpen && (
+            <>
+              <motion.button
+                className="menu-backdrop"
+                aria-label="Bezárás"
+                onClick={() => setMenuOpen(false)}
+                variants={backdropFade}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              />
+              <motion.div
+                className={`action-menu ${hasEvents ? "action-menu--fab" : ""}`}
+                variants={popIn}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              >
+                <motion.button whileTap={{ scale: 0.985 }} onClick={openJoinModal}>
+                  Csatlakozás kóddal
+                </motion.button>
+                <motion.button whileTap={{ scale: 0.985 }} onClick={openCreateModal}>
+                  Új esemény létrehozása
+                </motion.button>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
 
-        {modalType && (
-          <>
-            <button
-              className="modal-backdrop"
-              aria-label="Bezárás"
-              onClick={closeModal}
-            />
-            <div className="modal-card">
-              {modalType === "join" ? (
-                <>
-                  <div className="modal-head">
-                    <p>Csatlakozás</p>
-                    <h3>Eseménykód megadása</h3>
-                  </div>
-
-                  <form onSubmit={handleJoinSubmit} className="modal-form">
-                    <input
-                      type="text"
-                      value={joinCode}
-                      onChange={(e) => setJoinCode(e.target.value)}
-                      placeholder="Pl. A7K9X2"
-                      maxLength={12}
-                    />
-                    <div className="modal-actions">
-                      <button
-                        type="button"
-                        className="ghost-button"
-                        onClick={closeModal}
-                      >
-                        Mégse
-                      </button>
-                      <button type="submit" className="primary-button">
-                        Csatlakozás
-                      </button>
+        <AnimatePresence>
+          {modalType && (
+            <>
+              <motion.button
+                className="modal-backdrop"
+                aria-label="Bezárás"
+                onClick={closeModal}
+                variants={backdropFade}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              />
+              <motion.div
+                className="modal-card"
+                variants={popIn}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              >
+                {modalType === "join" ? (
+                  <>
+                    <div className="modal-head">
+                      <p>Csatlakozás</p>
+                      <h3>Eseménykód megadása</h3>
                     </div>
-                  </form>
-                </>
-              ) : (
-                <>
-                  <div className="modal-head">
-                    <p>Létrehozás</p>
-                    <h3>Új esemény neve</h3>
-                  </div>
 
-                  <form onSubmit={handleCreateSubmit} className="modal-form">
-                    <input
-                      type="text"
-                      value={eventName}
-                      onChange={(e) => setEventName(e.target.value)}
-                      placeholder="Pl. Gólyabál szervezés"
-                      maxLength={60}
-                    />
-                    <div className="modal-actions">
-                      <button
-                        type="button"
-                        className="ghost-button"
-                        onClick={closeModal}
-                      >
-                        Mégse
-                      </button>
-                      <button type="submit" className="primary-button">
-                        Létrehozás
-                      </button>
+                    <form onSubmit={handleJoinSubmit} className="modal-form">
+                      <input
+                        type="text"
+                        value={joinCode}
+                        onChange={(e) => setJoinCode(e.target.value)}
+                        placeholder="Pl. A7K9X2"
+                        maxLength={12}
+                      />
+                      <div className="modal-actions">
+                        <motion.button
+                          type="button"
+                          className="ghost-button"
+                          onClick={closeModal}
+                          whileTap={{ scale: 0.985 }}
+                        >
+                          Mégse
+                        </motion.button>
+                        <motion.button
+                          type="submit"
+                          className="primary-button"
+                          whileTap={{ scale: 0.985 }}
+                        >
+                          Csatlakozás
+                        </motion.button>
+                      </div>
+                    </form>
+                  </>
+                ) : (
+                  <>
+                    <div className="modal-head">
+                      <p>Létrehozás</p>
+                      <h3>Új esemény neve</h3>
                     </div>
-                  </form>
-                </>
-              )}
-            </div>
-          </>
-        )}
-      </div>
-    </main>
+
+                    <form onSubmit={handleCreateSubmit} className="modal-form">
+                      <input
+                        type="text"
+                        value={eventName}
+                        onChange={(e) => setEventName(e.target.value)}
+                        placeholder="Pl. Gólyabál szervezés"
+                        maxLength={60}
+                      />
+                      <div className="modal-actions">
+                        <motion.button
+                          type="button"
+                          className="ghost-button"
+                          onClick={closeModal}
+                          whileTap={{ scale: 0.985 }}
+                        >
+                          Mégse
+                        </motion.button>
+                        <motion.button
+                          type="submit"
+                          className="primary-button"
+                          whileTap={{ scale: 0.985 }}
+                        >
+                          Létrehozás
+                        </motion.button>
+                      </div>
+                    </form>
+                  </>
+                )}
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </motion.main>
   );
 }

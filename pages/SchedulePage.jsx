@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Link, useParams } from "react-router-dom";
 import "../styles/schedule-page.css";
+import { backdropFade, fadeUp, pageMotion, popIn, tabPanel } from "../lib/motion";
 
 export default function SchedulePage() {
   const { id } = useParams();
@@ -74,7 +76,7 @@ export default function SchedulePage() {
       start: "10:15",
       end: "10:30",
       location: "2-es terem",
-      address: "Kecskemét, 2-es terem",
+      address: "Kecskemét, könyves kálmán krt 32",
       description:
         "Workshop felvezetése, technika ellenőrzése, előadó támogatása.",
       assignees: [2, 6],
@@ -99,8 +101,7 @@ export default function SchedulePage() {
     return Object.fromEntries(participants.map((p) => [p.id, p]));
   }, [participants]);
 
-  const selectedTask =
-    tasks.find((task) => task.id === selectedTaskId) || tasks[0];
+  const selectedTask = tasks.find((task) => task.id === selectedTaskId) || tasks[0];
 
   const uniqueLocations = useMemo(() => {
     const seen = new Map();
@@ -133,9 +134,15 @@ export default function SchedulePage() {
   }
 
   return (
-    <main className="schedule-page">
-      <div className="schedule-shell">
-        <header className="schedule-header">
+    <motion.main
+      className="schedule-page"
+      variants={pageMotion}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+    >
+      <motion.div className="schedule-shell" variants={fadeUp}>
+        <motion.header className="schedule-header" variants={fadeUp}>
           <div className="schedule-header__left">
             <Link
               to={`/event/${event.id}`}
@@ -156,407 +163,510 @@ export default function SchedulePage() {
 
           <div className="schedule-header__actions">
             <div className="schedule-view-switch">
-              <button
+              <motion.button
                 className={viewMode === "timeline" ? "active" : ""}
                 onClick={() => setViewMode("timeline")}
+                whileTap={{ scale: 0.97 }}
               >
                 Idővonal
-              </button>
-              <button
+              </motion.button>
+              <motion.button
                 className={viewMode === "list" ? "active" : ""}
                 onClick={() => setViewMode("list")}
+                whileTap={{ scale: 0.97 }}
               >
                 Lista
-              </button>
+              </motion.button>
             </div>
 
             <div className="schedule-mobile-actions-row">
-              <button
+              <motion.button
                 className="schedule-create-button"
                 onClick={() => setShowCreateModal(true)}
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.97 }}
               >
                 + Új blokk
-              </button>
+              </motion.button>
 
-              <section className="schedule-overview">
-                <button
-                  className={
-                    insightOpen && insightTab === "tasks"
-                      ? "overview-card overview-card--active"
-                      : "overview-card"
-                  }
-                  onClick={() => toggleInsight("tasks")}
-                  aria-label="Feladatok"
-                >
-                  <p>Feladatok</p>
-                  <h2>{tasks.length}</h2>
-                  <div className="overview-card__icon tasks" aria-hidden="true">
-                    <span />
-                    <span />
-                    <span />
-                  </div>
-                </button>
+              <motion.button
+                className={`schedule-mobile-icon-button ${insightOpen && insightTab === "tasks" ? "active" : ""}`}
+                onClick={() => toggleInsight("tasks")}
+                whileTap={{ scale: 0.95 }}
+                aria-label="Feladatok áttekintése"
+                title="Feladatok"
+              >
+                <span className="schedule-mini-icon schedule-mini-icon--tasks" aria-hidden="true">
+                  <span />
+                  <span />
+                  <span />
+                </span>
+              </motion.button>
 
-                <button
-                  className={
-                    insightOpen && insightTab === "participants"
-                      ? "overview-card overview-card--active"
-                      : "overview-card"
-                  }
-                  onClick={() => toggleInsight("participants")}
-                  aria-label="Résztvevők"
-                >
-                  <p>Résztvevők</p>
-                  <h2>{participants.length}</h2>
-                  <div
-                    className="overview-card__icon participants"
-                    aria-hidden="true"
-                  >
-                    <span />
-                    <span />
-                  </div>
-                </button>
+              <motion.button
+                className={`schedule-mobile-icon-button ${insightOpen && insightTab === "locations" ? "active" : ""}`}
+                onClick={() => toggleInsight("locations")}
+                whileTap={{ scale: 0.95 }}
+                aria-label="Helyszínek áttekintése"
+                title="Helyszínek"
+              >
+                <span className="schedule-mini-icon schedule-mini-icon--locations" aria-hidden="true">
+                  <span />
+                  <span />
+                </span>
+              </motion.button>
 
-                <button
-                  className={
-                    insightOpen && insightTab === "locations"
-                      ? "overview-card overview-card--active"
-                      : "overview-card"
-                  }
-                  onClick={() => toggleInsight("locations")}
-                  aria-label="Helyszínek"
-                >
-                  <p>Helyszínek</p>
-                  <h2>{uniqueLocations.length}</h2>
-                  <div
-                    className="overview-card__icon locations"
-                    aria-hidden="true"
-                  >
-                    <span />
-                    <span />
-                  </div>
-                </button>
-              </section>
+              <motion.button
+                className={`schedule-mobile-icon-button ${insightOpen && insightTab === "participants" ? "active" : ""}`}
+                onClick={() => toggleInsight("participants")}
+                whileTap={{ scale: 0.95 }}
+                aria-label="Résztvevők áttekintése"
+                title="Emberek"
+              >
+                <span className="schedule-mini-icon schedule-mini-icon--participants" aria-hidden="true">
+                  <span />
+                  <span />
+                </span>
+              </motion.button>
             </div>
           </div>
-        </header>
+        </motion.header>
 
-        {insightOpen && (
-          <section className="insight-panel">
-            <div className="insight-panel__head">
-              <div>
-                <p>Gyors áttekintés</p>
-                <h3>
-                  {insightTab === "tasks" && "Feladatok"}
-                  {insightTab === "participants" && "Résztvevők"}
-                  {insightTab === "locations" && "Helyszínek"}
-                </h3>
-              </div>
+        <motion.section className="schedule-overview" variants={fadeUp}>
+          <motion.button
+            className={insightOpen && insightTab === "tasks" ? "overview-card overview-card--active" : "overview-card"}
+            onClick={() => toggleInsight("tasks")}
+            whileHover={{ y: -2 }}
+            whileTap={{ scale: 0.985 }}
+          >
+            <p>Feladatok</p>
+            <h2>{tasks.length}</h2>
+          </motion.button>
 
-              <button
-                className="insight-close-button"
-                onClick={() => {
-                  setInsightOpen(false);
-                  setInsightTab("");
-                }}
-              >
-                Bezárás
-              </button>
-            </div>
+          <motion.button
+            className={insightOpen && insightTab === "locations" ? "overview-card overview-card--active" : "overview-card"}
+            onClick={() => toggleInsight("locations")}
+            whileHover={{ y: -2 }}
+            whileTap={{ scale: 0.985 }}
+          >
+            <p>Helyszínek</p>
+            <h2>{uniqueLocations.length}</h2>
+          </motion.button>
 
-            {insightTab === "tasks" && (
-              <div className="insight-list">
-                {tasks.map((task) => (
-                  <div className="insight-row" key={task.id}>
-                    <div>
-                      <strong>{task.title}</strong>
-                      <span>{task.category}</span>
-                    </div>
+          <motion.button
+            className={insightOpen && insightTab === "participants" ? "overview-card overview-card--active" : "overview-card"}
+            onClick={() => toggleInsight("participants")}
+            whileHover={{ y: -2 }}
+            whileTap={{ scale: 0.985 }}
+          >
+            <p>Emberek</p>
+            <h2>{participants.length}</h2>
+          </motion.button>
+        </motion.section>
 
-                    <div className="insight-row__meta">
-                      {task.start} – {task.end}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {insightTab === "locations" && (
-              <div className="insight-list">
-                {uniqueLocations.map((location) => (
-                  <div className="insight-row" key={location.name}>
-                    <div>
-                      <strong>{location.name}</strong>
-                      <span>{location.address}</span>
-                    </div>
-
-                    <a
-                      className="insight-link"
-                      href={getMapsUrl(location.address)}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Maps
-                    </a>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {insightTab === "participants" && (
-              <div className="insight-list">
-                {participants.map((participant) => {
-                  const count = tasks.filter((task) =>
-                    task.assignees.includes(participant.id)
-                  ).length;
-
-                  return (
-                    <div className="insight-row" key={participant.id}>
-                      <div>
-                        <strong>{participant.name}</strong>
-                        <span>Résztvevő</span>
-                      </div>
-
-                      <div className="insight-row__meta">{count} feladat</div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </section>
-        )}
-
-        <section className="schedule-layout">
-          <div className="schedule-main">
-            {viewMode === "timeline" ? (
-              <div className="timeline-list">
-                {tasks.map((task) => {
-                  const isOpen = selectedTaskId === task.id;
-
-                  return (
-                    <div
-                      key={task.id}
-                      className={isOpen ? `task-block open ${task.color}` : `task-block ${task.color}`}
-                    >
-                      <button
-                        className={
-                          isOpen
-                            ? `task-card active ${task.color}`
-                            : `task-card ${task.color}`
-                        }
-                        onClick={() => setSelectedTaskId(isOpen ? null : task.id)}
-                      >
-                        <div className="task-card__time">
-                          <span>{task.start}</span>
-                          <span>{task.end}</span>
-                        </div>
-
-                        <div className="task-card__main">
-                          <div className="task-card__top">
-                            <p>{task.category}</p>
-                            <span>{task.location}</span>
-                          </div>
-
-                          <h3>{task.title}</h3>
-
-                          <div className="task-card__people">
-                            {task.assignees.map((assigneeId) => (
-                              <div key={assigneeId} className="person-pill">
-                                {participantMap[assigneeId]?.name}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </button>
-
-                      {isOpen && (
-                        <div className={`task-inline-detail ${task.color}`}>
-                          <div className="task-inline-detail__inner">
-                            <div className="task-detail-meta">
-                              <div className="detail-row">
-                                <span>Idő</span>
-                                <strong>
-                                  {task.start} – {task.end}
-                                </strong>
-                              </div>
-
-                              <div className="detail-row">
-                                <span>Helyszín</span>
-                                <strong>{task.location}</strong>
-                              </div>
-
-                              <div className="detail-row">
-                                <span>Cím</span>
-                                <strong>{task.address}</strong>
-                              </div>
-                            </div>
-
-                            <div className="task-detail-description">
-                              <p>Leírás</p>
-                              <div>{task.description}</div>
-                            </div>
-
-                            <div className="task-detail-assignees">
-                              <p>Hozzárendelt emberek</p>
-                              <div className="detail-assignee-list">
-                                {task.assignees.map((assigneeId) => (
-                                  <div key={assigneeId} className="detail-assignee-pill">
-                                    {participantMap[assigneeId]?.name}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-
-                            <div className="task-detail-actions">
-                              <a
-                                className="ghost-link-button"
-                                href={getMapsUrl(task.address)}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                Útvonaltervezés
-                              </a>
-
-                              <button className="primary-action-button">
-                                Szerkesztés
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="task-table-card">
-                <div className="task-table-header">
-                  <span>Idő</span>
-                  <span>Feladat</span>
-                  <span>Helyszín</span>
-                  <span>Felelősök</span>
+        <AnimatePresence initial={false}>
+          {insightOpen && (
+            <motion.section
+              className="insight-panel"
+              variants={popIn}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+            >
+              <div className="insight-panel__head">
+                <div>
+                  <p>Áttekintés</p>
+                  <h3>
+                    {insightTab === "tasks" && "Feladatok részletesen"}
+                    {insightTab === "locations" && "Helyszínek"}
+                    {insightTab === "participants" && "Résztvevők terhelése"}
+                  </h3>
                 </div>
 
-                {tasks.map((task) => (
-                  <button
-                    key={task.id}
-                    className="task-table-row"
-                    onClick={() => setSelectedTaskId(task.id)}
-                  >
-                    <span>
-                      {task.start}–{task.end}
-                    </span>
-                    <span>{task.title}</span>
-                    <span>{task.location}</span>
-                    <span>
-                      {task.assignees
-                        .map((assigneeId) => participantMap[assigneeId]?.name)
-                        .join(", ")}
-                    </span>
-                  </button>
-                ))}
+                <motion.button
+                  className="insight-close-button"
+                  onClick={() => {
+                    setInsightOpen(false);
+                    setInsightTab("");
+                  }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  Bezárás
+                </motion.button>
               </div>
-            )}
+
+              {insightTab === "tasks" && (
+                <div className="insight-list">
+                  {tasks.map((task, index) => (
+                    <motion.div
+                      className="insight-row"
+                      key={task.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2, delay: index * 0.03 }}
+                    >
+                      <div>
+                        <strong>{task.title}</strong>
+                        <span>
+                          {task.start} – {task.end} • {task.location}
+                        </span>
+                      </div>
+
+                      <div className="insight-row__meta">{task.assignees.length} fő</div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+
+              {insightTab === "locations" && (
+                <div className="insight-list">
+                  {uniqueLocations.map((location, index) => (
+                    <motion.div
+                      className="insight-row"
+                      key={location.name}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2, delay: index * 0.03 }}
+                    >
+                      <div>
+                        <strong>{location.name}</strong>
+                        <span>{location.address}</span>
+                      </div>
+
+                      <a
+                        className="insight-link"
+                        href={getMapsUrl(location.address)}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Maps
+                      </a>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+
+              {insightTab === "participants" && (
+                <div className="insight-list">
+                  {participants.map((participant, index) => {
+                    const count = tasks.filter((task) => task.assignees.includes(participant.id)).length;
+
+                    return (
+                      <motion.div
+                        className="insight-row"
+                        key={participant.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2, delay: index * 0.03 }}
+                      >
+                        <div>
+                          <strong>{participant.name}</strong>
+                          <span>Résztvevő</span>
+                        </div>
+
+                        <div className="insight-row__meta">{count} feladat</div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              )}
+            </motion.section>
+          )}
+        </AnimatePresence>
+
+        <motion.section className="schedule-layout" variants={fadeUp}>
+          <div className="schedule-main">
+            <AnimatePresence mode="wait">
+              {viewMode === "timeline" ? (
+                <motion.div
+                  key="timeline"
+                  className="timeline-list"
+                  variants={tabPanel}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                >
+                  {tasks.map((task, index) => {
+                    const isOpen = selectedTaskId === task.id;
+
+                    return (
+                      <motion.div
+                        key={task.id}
+                        className={isOpen ? `task-block open ${task.color}` : `task-block ${task.color}`}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.24, delay: index * 0.04 }}
+                        layout
+                      >
+                        <motion.button
+                          className={isOpen ? `task-card active ${task.color}` : `task-card ${task.color}`}
+                          onClick={() => setSelectedTaskId(isOpen ? null : task.id)}
+                          whileHover={{ y: -2 }}
+                          whileTap={{ scale: 0.992 }}
+                          layout
+                        >
+                          <div className="task-card__time">
+                            <span>{task.start}</span>
+                            <span>{task.end}</span>
+                          </div>
+
+                          <div className="task-card__main">
+                            <div className="task-card__top">
+                              <p>{task.category}</p>
+                              <span>{task.location}</span>
+                            </div>
+
+                            <h3>{task.title}</h3>
+
+                            <div className="task-card__people">
+                              {task.assignees.map((assigneeId) => (
+                                <div key={assigneeId} className="person-pill">
+                                  {participantMap[assigneeId]?.name}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </motion.button>
+
+                        <AnimatePresence initial={false}>
+                          {isOpen && (
+                            <motion.div
+                              className={`task-inline-detail ${task.color}`}
+                              initial={{ opacity: 0, height: 0, y: -6 }}
+                              animate={{ opacity: 1, height: "auto", y: 0 }}
+                              exit={{ opacity: 0, height: 0, y: -4 }}
+                              transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                            >
+                              <motion.div
+                                className="task-inline-detail__inner"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.16, delay: 0.04 }}
+                              >
+                                <div className="task-detail-meta">
+                                  <div className="detail-row">
+                                    <span>Idő</span>
+                                    <strong>
+                                      {task.start} – {task.end}
+                                    </strong>
+                                  </div>
+
+                                  <div className="detail-row">
+                                    <span>Helyszín</span>
+                                    <strong>{task.location}</strong>
+                                  </div>
+
+                                  <div className="detail-row">
+                                    <span>Cím</span>
+                                    <strong>{task.address}</strong>
+                                  </div>
+                                </div>
+
+                                <div className="task-detail-description">
+                                  <p>Leírás</p>
+                                  <div>{task.description}</div>
+                                </div>
+
+                                <div className="task-detail-assignees">
+                                  <p>Hozzárendelt emberek</p>
+                                  <div className="detail-assignee-list">
+                                    {task.assignees.map((assigneeId) => (
+                                      <div key={assigneeId} className="detail-assignee-pill">
+                                        {participantMap[assigneeId]?.name}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                <div className="task-detail-actions">
+                                  <a
+                                    className="ghost-link-button"
+                                    href={getMapsUrl(task.address)}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    Útvonaltervezés
+                                  </a>
+
+                                  <motion.button className="primary-action-button" whileTap={{ scale: 0.97 }}>
+                                    Szerkesztés
+                                  </motion.button>
+                                </div>
+                              </motion.div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </motion.div>
+                    );
+                  })}
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="list"
+                  className="task-table-card"
+                  variants={tabPanel}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                >
+                  <div className="task-table-header">
+                    <span>Idő</span>
+                    <span>Feladat</span>
+                    <span>Helyszín</span>
+                    <span>Felelősök</span>
+                  </div>
+
+                  {tasks.map((task, index) => (
+                    <motion.button
+                      key={task.id}
+                      className="task-table-row"
+                      onClick={() => setSelectedTaskId(task.id)}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2, delay: index * 0.03 }}
+                      whileHover={{ backgroundColor: "rgba(9, 15, 13, 0.28)" }}
+                      whileTap={{ scale: 0.996 }}
+                    >
+                      <span>
+                        {task.start}–{task.end}
+                      </span>
+                      <span>{task.title}</span>
+                      <span>{task.location}</span>
+                      <span>
+                        {task.assignees
+                          .map((assigneeId) => participantMap[assigneeId]?.name)
+                          .join(", ")}
+                      </span>
+                    </motion.button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           <aside className="schedule-side desktop-only">
-            <div className={`task-detail-card ${selectedTask.color}`}>
-              <div className="task-detail-card__top">
-                <p>{selectedTask.category}</p>
-                <h2>{selectedTask.title}</h2>
-              </div>
-
-              <div className="task-detail-meta">
-                <div className="detail-row">
-                  <span>Idő</span>
-                  <strong>
-                    {selectedTask.start} – {selectedTask.end}
-                  </strong>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={selectedTask.id}
+                className={`task-detail-card ${selectedTask.color}`}
+                initial={{ opacity: 0, x: 14 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <div className="task-detail-card__top">
+                  <p>{selectedTask.category}</p>
+                  <h2>{selectedTask.title}</h2>
                 </div>
 
-                <div className="detail-row">
-                  <span>Helyszín</span>
-                  <strong>{selectedTask.location}</strong>
+                <div className="task-detail-meta">
+                  <div className="detail-row">
+                    <span>Idő</span>
+                    <strong>
+                      {selectedTask.start} – {selectedTask.end}
+                    </strong>
+                  </div>
+
+                  <div className="detail-row">
+                    <span>Helyszín</span>
+                    <strong>{selectedTask.location}</strong>
+                  </div>
+
+                  <div className="detail-row">
+                    <span>Cím</span>
+                    <strong>{selectedTask.address}</strong>
+                  </div>
                 </div>
 
-                <div className="detail-row">
-                  <span>Cím</span>
-                  <strong>{selectedTask.address}</strong>
+                <div className="task-detail-description">
+                  <p>Leírás</p>
+                  <div>{selectedTask.description}</div>
                 </div>
-              </div>
 
-              <div className="task-detail-description">
-                <p>Leírás</p>
-                <div>{selectedTask.description}</div>
-              </div>
-
-              <div className="task-detail-assignees">
-                <p>Hozzárendelt emberek</p>
-                <div className="detail-assignee-list">
-                  {selectedTask.assignees.map((assigneeId) => (
-                    <div key={assigneeId} className="detail-assignee-pill">
-                      {participantMap[assigneeId]?.name}
-                    </div>
-                  ))}
+                <div className="task-detail-assignees">
+                  <p>Hozzárendelt emberek</p>
+                  <div className="detail-assignee-list">
+                    {selectedTask.assignees.map((assigneeId) => (
+                      <div key={assigneeId} className="detail-assignee-pill">
+                        {participantMap[assigneeId]?.name}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <div className="task-detail-actions">
-                <a
-                  className="ghost-link-button"
-                  href={getMapsUrl(selectedTask.address)}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Útvonaltervezés
-                </a>
-
-                <button className="primary-action-button">Szerkesztés</button>
-              </div>
-            </div>
-          </aside>
-        </section>
-
-        {showCreateModal && (
-          <>
-            <button
-              className="schedule-modal-backdrop"
-              onClick={() => setShowCreateModal(false)}
-              aria-label="Bezárás"
-            />
-
-            <div className="schedule-modal">
-              <div className="schedule-modal__head">
-                <p>Új beosztás blokk</p>
-                <h3>Gyors létrehozás</h3>
-              </div>
-
-              <form className="schedule-modal__form">
-                <input type="text" placeholder="Feladat neve" />
-                <div className="double-input-row">
-                  <input type="text" placeholder="Kezdés pl. 08:30" />
-                  <input type="text" placeholder="Befejezés pl. 09:15" />
-                </div>
-                <input type="text" placeholder="Helyszín" />
-                <input type="text" placeholder="Cím / Maps link" />
-                <textarea placeholder="Rövid leírás" rows="4" />
-                <div className="schedule-modal__actions">
-                  <button
-                    type="button"
-                    className="secondary-modal-button"
-                    onClick={() => setShowCreateModal(false)}
+                <div className="task-detail-actions">
+                  <a
+                    className="ghost-link-button"
+                    href={getMapsUrl(selectedTask.address)}
+                    target="_blank"
+                    rel="noreferrer"
                   >
-                    Mégse
-                  </button>
-                  <button type="submit" className="primary-modal-button">
-                    Létrehozás
-                  </button>
+                    Útvonaltervezés
+                  </a>
+
+                  <motion.button className="primary-action-button" whileTap={{ scale: 0.97 }}>
+                    Szerkesztés
+                  </motion.button>
                 </div>
-              </form>
-            </div>
-          </>
-        )}
-      </div>
-    </main>
+              </motion.div>
+            </AnimatePresence>
+          </aside>
+        </motion.section>
+
+        <AnimatePresence>
+          {showCreateModal && (
+            <>
+              <motion.button
+                className="schedule-modal-backdrop"
+                onClick={() => setShowCreateModal(false)}
+                aria-label="Bezárás"
+                variants={backdropFade}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              />
+
+              <motion.div
+                className="schedule-modal"
+                variants={popIn}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              >
+                <div className="schedule-modal__head">
+                  <p>Új beosztás blokk</p>
+                  <h3>Gyors létrehozás</h3>
+                </div>
+
+                <form className="schedule-modal__form">
+                  <input type="text" placeholder="Feladat neve" />
+                  <div className="double-input-row">
+                    <input type="text" placeholder="Kezdés pl. 08:30" />
+                    <input type="text" placeholder="Befejezés pl. 09:15" />
+                  </div>
+                  <input type="text" placeholder="Helyszín" />
+                  <input type="text" placeholder="Cím / Maps link" />
+                  <textarea placeholder="Rövid leírás" rows="4" />
+                  <div className="schedule-modal__actions">
+                    <motion.button
+                      type="button"
+                      className="secondary-modal-button"
+                      onClick={() => setShowCreateModal(false)}
+                      whileTap={{ scale: 0.985 }}
+                    >
+                      Mégse
+                    </motion.button>
+                    <motion.button type="submit" className="primary-modal-button" whileTap={{ scale: 0.985 }}>
+                      Létrehozás
+                    </motion.button>
+                  </div>
+                </form>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </motion.main>
   );
 }

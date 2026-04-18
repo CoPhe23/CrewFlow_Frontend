@@ -3,21 +3,31 @@ import "../styles/home.css";
 
 export default function Home() {
   const [events, setEvents] = useState([
-    {
-      id: 1,
-      title: "Tavaszi Iskolabál",
-      code: "Q7M4X2",
-      members: 18,
-      role: "Szervező",
-    },
-    {
-      id: 2,
-      title: "DÖK Gyűlés",
-      code: "R9K2P1",
-      members: 9,
-      role: "Tag",
-    },
-  ]);
+  {
+    id: 1,
+    title: "Tavaszi Iskolabál",
+    code: "Q7M4X2",
+    members: 18,
+    role: "Szervező",
+    iconType: "spark",
+  },
+  {
+    id: 2,
+    title: "DÖK Gyűlés",
+    code: "R9K2P1",
+    members: 9,
+    role: "Tag",
+    iconType: "grid",
+  },
+  {
+    id: 3,
+    title: "Aftermovie Forgatás",
+    code: "F8N2L4",
+    members: 6,
+    role: "Admin",
+    iconType: "pulse",
+  },
+]);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [modalType, setModalType] = useState("");
@@ -101,9 +111,36 @@ export default function Home() {
                 </div>
 
                 <div className="event-card__body">
-                  <h2>{event.title}</h2>
-                  <p>Kód: {event.code}</p>
-                </div>
+  <div className="event-card__icon">
+    {event.iconType === "spark" && (
+      <div className="icon-spark">
+        <span />
+        <span />
+        <span />
+      </div>
+    )}
+
+    {event.iconType === "grid" && (
+      <div className="icon-grid">
+        <span />
+        <span />
+        <span />
+        <span />
+      </div>
+    )}
+
+    {event.iconType === "pulse" && (
+      <div className="icon-pulse">
+        <span />
+        <span />
+        <span />
+      </div>
+    )}
+  </div>
+
+  <h2>{event.title}</h2>
+  <p>Kód: {event.code}</p>
+</div>
               </article>
             ))}
           </section>

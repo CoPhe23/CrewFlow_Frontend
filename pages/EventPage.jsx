@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "../styles/EventPage.css";
 import { backdropFade, fadeUp, pageMotion, popIn, tabPanel } from "../lib/motion";
 
+const CURRENT_USER_ID = 1;
+
 export default function EventPage() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("wall");
   const [menuOpen, setMenuOpen] = useState(false);
   const [modalType, setModalType] = useState("");
@@ -13,17 +16,32 @@ export default function EventPage() {
     "Az esemény fő szervezői felülete. Itt jelennek meg a fontos információk, a kiemelt beosztás, valamint a csapat kommunikációja."
   );
   const [editedName, setEditedName] = useState(eventName);
+  const [newPostText, setNewPostText] = useState("");
 
-  const event = {
-    id: 1,
-    name: eventName,
-    description: eventDescription,
-    role: "Szervező",
-    participantCount: 18,
-    canManage: true,
-  };
+  const [participants, setParticipants] = useState([
+    {
+      id: 1,
+      name: "Máté Bárdos",
+      role: "Admin",
+    },
+    {
+      id: 2,
+      name: "Anna Kovács",
+      role: "Admin",
+    },
+    {
+      id: 3,
+      name: "Bence Tóth",
+      role: "Tag",
+    },
+    {
+      id: 4,
+      name: "Lili Nagy",
+      role: "Tag",
+    },
+  ]);
 
-  const posts = [
+  const [posts, setPosts] = useState([
     {
       id: 1,
       author: "Anna Kovács",
@@ -34,11 +52,26 @@ export default function EventPage() {
     {
       id: 2,
       author: "Máté Bárdos",
-      role: "Szervező",
+      role: "Admin",
       time: "Ma, 11:08",
       text: "A dekoros csapat listája frissítve lett, este még felkerül a végleges beosztás is.",
     },
-  ];
+  ]);
+
+  const currentUser = useMemo(() => {
+    return participants.find((participant) => participant.id === CURRENT_USER_ID);
+  }, [participants]);
+
+  const isAdmin = currentUser?.role === "Admin";
+
+  const event = {
+    id: 1,
+    name: eventName,
+    description: eventDescription,
+    role: isAdmin ? "Admin" : "Résztvevő",
+    participantCount: participants.length,
+    canManage: isAdmin,
+  };
 
   const chatMessages = [
     {
@@ -64,29 +97,6 @@ export default function EventPage() {
     },
   ];
 
-  const participants = [
-    {
-      id: 1,
-      name: "Máté Bárdos",
-      role: "Szervező",
-    },
-    {
-      id: 2,
-      name: "Anna Kovács",
-      role: "Admin",
-    },
-    {
-      id: 3,
-      name: "Bence Tóth",
-      role: "Tag",
-    },
-    {
-      id: 4,
-      name: "Lili Nagy",
-      role: "Tag",
-    },
-  ];
-
   function closeModal() {
     setModalType("");
     setMenuOpen(false);
@@ -95,14 +105,53 @@ export default function EventPage() {
 
   function handleRenameSubmit(e) {
     e.preventDefault();
-    if (!editedName.trim()) return;
+    if (!isAdmin || !editedName.trim()) return;
     setEventName(editedName.trim());
     closeModal();
   }
 
+  function handlePostSubmit(e) {
+    e.preventDefault();
+    if (!isAdmin || !newPostText.trim()) return;
+
+    setPosts((prevPosts) => [
+      {
+        id: Date.now(),
+        author: currentUser?.name || "Admin",
+        role: currentUser?.role || "Admin",
+        time: "Most",
+        text: newPostText.trim(),
+      },
+      ...prevPosts,
+    ]);
+
+    setNewPostText("");
+  }
+
+  function handleMakeAdmin(participantId) {
+    if (!isAdmin) return;
+
+    setParticipants((prevParticipants) =>
+      prevParticipants.map((participant) =>
+        participant.id === participantId ? { ...participant, role: "Admin" } : participant
+      )
+    );
+  }
+
+  function handleRemoveParticipant(participantId) {
+    if (!isAdmin || participantId === CURRENT_USER_ID) return;
+
+    setParticipants((prevParticipants) =>
+      prevParticipants.filter((participant) => participant.id !== participantId)
+    );
+  }
+
   function handleDeleteEvent() {
+    if (!isAdmin) return;
+
     console.log("Törlés backenddel később");
     closeModal();
+    navigate("/home");
   }
 
   function handleLeaveEvent() {
@@ -298,6 +347,37 @@ export default function EventPage() {
                 </Link>
               </motion.div>
 
+              {isAdmin && (
+                <motion.form
+                  className="post-composer-card"
+                  onSubmit={handlePostSubmit}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.24 }}
+                >
+                  <div className="post-composer-card__head">
+                    <div>
+                      <p>Admin poszt</p>
+                      <h3>Új bejegyzés a falra</h3>
+                    </div>
+                    <span>Csak adminoknak</span>
+                  </div>
+
+                  <textarea
+                    value={newPostText}
+                    onChange={(e) => setNewPostText(e.target.value)}
+                    placeholder="Írj ki egy fontos infót az esemény falára..."
+                    rows="4"
+                  />
+
+                  <div className="post-composer-card__actions">
+                    <motion.button type="submit" className="primary-button" whileTap={{ scale: 0.985 }}>
+                      Posztolás
+                    </motion.button>
+                  </div>
+                </motion.form>
+              )}
+
               <div className="post-list">
                 {posts.map((post, index) => (
                   <motion.article
@@ -385,22 +465,56 @@ export default function EventPage() {
               </div>
 
               <div className="participants-list">
-                {participants.map((participant, index) => (
-                  <motion.article
-                    className="participant-card"
-                    key={participant.id}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.24, delay: index * 0.04 }}
-                  >
-                    <div className="participant-avatar">{participant.name.slice(0, 1)}</div>
+                {participants.map((participant, index) => {
+                  const isCurrentUser = participant.id === CURRENT_USER_ID;
+                  const participantIsAdmin = participant.role === "Admin";
 
-                    <div className="participant-main">
-                      <h3>{participant.name}</h3>
-                      <p>{participant.role}</p>
-                    </div>
-                  </motion.article>
-                ))}
+                  return (
+                    <motion.article
+                      className="participant-card"
+                      key={participant.id}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.24, delay: index * 0.04 }}
+                    >
+                      <div className="participant-avatar">{participant.name.slice(0, 1)}</div>
+
+                      <div className="participant-main">
+                        <div className="participant-title-row">
+                          <h3>{participant.name}</h3>
+                          {isCurrentUser && <span className="self-badge">Te</span>}
+                        </div>
+                        <p>{participant.role}</p>
+                      </div>
+
+                      {isAdmin && (
+                        <div className="participant-actions">
+                          {!participantIsAdmin && (
+                            <motion.button
+                              type="button"
+                              className="participant-action-button"
+                              onClick={() => handleMakeAdmin(participant.id)}
+                              whileTap={{ scale: 0.985 }}
+                            >
+                              Adminná tesz
+                            </motion.button>
+                          )}
+
+                          {!isCurrentUser && (
+                            <motion.button
+                              type="button"
+                              className="participant-action-button participant-action-button--danger"
+                              onClick={() => handleRemoveParticipant(participant.id)}
+                              whileTap={{ scale: 0.985 }}
+                            >
+                              Eltávolít
+                            </motion.button>
+                          )}
+                        </div>
+                      )}
+                    </motion.article>
+                  );
+                })}
               </div>
             </motion.section>
           )}
@@ -470,7 +584,7 @@ export default function EventPage() {
                       <h3>Biztosan kilépsz ebből az eseményből?</h3>
                     </div>
 
-                    <p className="modal-text">
+                    <p className="modal-text-block">
                       A későbbiekben csak új meghívókóddal tudsz majd visszacsatlakozni.
                     </p>
 
@@ -495,14 +609,14 @@ export default function EventPage() {
                   </>
                 )}
 
-                {modalType === "delete" && (
+                {isAdmin && modalType === "delete" && (
                   <>
                     <div className="modal-head">
                       <p>Törlés</p>
                       <h3>Biztosan törölni szeretnéd az eseményt?</h3>
                     </div>
 
-                    <p className="modal-text">
+                    <p className="modal-text-block">
                       Ez a művelet később backend oldalon végleges törléshez fog kapcsolódni.
                     </p>
 

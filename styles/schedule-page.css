@@ -686,8 +686,12 @@
 
 .schedule-modal {
   position: fixed;
-  inset: 50% auto auto 50%;
-  transform: translate(-50%, -50%);
+  top: 50%;
+  left: 50%;
+  right: auto;
+  bottom: auto;
+  translate: -50% -50%;
+  transform: none;
   width: calc(100% - 28px);
   max-width: 520px;
   z-index: 45;
@@ -1011,5 +1015,99 @@
   .secondary-modal-button,
   .primary-modal-button {
     width: 100%;
+  }
+}
+.danger-action-button {
+  min-height: 46px;
+  padding: 0 16px;
+  border-radius: 14px;
+  border: none;
+  background: linear-gradient(120deg, #7a2020, #a83737);
+  color: white;
+  font-weight: 740;
+  cursor: pointer;
+  transition: transform 0.18s ease;
+}
+
+.danger-action-button:hover {
+  transform: translateY(-1px);
+}
+
+.task-form-section {
+  display: grid;
+  gap: 10px;
+}
+
+.task-form-section p {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(183, 201, 184, 0.88);
+}
+
+.task-form-assignees {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.task-form-assignee {
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(44, 74, 58, 0.62);
+  background: rgba(9, 15, 13, 0.42);
+  color: rgba(183, 201, 184, 0.94);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.task-form-assignee.selected {
+  border-color: rgba(232, 193, 90, 0.28);
+  background: linear-gradient(120deg, rgba(30, 68, 30, 0.94), rgba(46, 107, 62, 0.88));
+  color: rgba(231, 236, 232, 0.98);
+}
+
+.schedule-modal__form select {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 14px;
+  border: 1px solid rgba(44, 74, 58, 0.62);
+  background: rgba(9, 15, 13, 0.54);
+  color: rgba(231, 236, 232, 0.98);
+  padding: 0 14px;
+  outline: none;
+  font-size: 14px;
+}
+
+.schedule-modal__form select:focus {
+  border-color: rgba(232, 193, 90, 0.34);
+  box-shadow:
+    0 0 0 2px rgba(232, 193, 90, 0.08),
+    0 0 0 5px rgba(111, 166, 106, 0.04);
+}
+
+@media (max-width: 640px) {
+  .danger-action-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .schedule-mobile-actions-row {
+    grid-template-columns: minmax(0, 1fr) repeat(3, 48px);
+  }
+}
+
+.schedule-modal {
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 640px) {
+  .schedule-modal {
+    width: calc(100vw - 28px);
+    max-height: calc(100dvh - 28px);
   }
 }

@@ -7,7 +7,7 @@
   background:
     radial-gradient(900px 620px at 20% 10%, rgba(203, 191, 163, 0.04), transparent 60%),
     radial-gradient(980px 720px at 85% 22%, rgba(42, 31, 23, 0.14), transparent 62%),
-    radial-gradient(820px 620px at 65% 110%, rgba(46, 107, 62, 0.10), transparent 62%),
+    radial-gradient(820px 620px at 65% 110%, rgba(46, 107, 62, 0.1), transparent 62%),
     linear-gradient(180deg, #0b1210, #0a0f0d);
   color: rgba(231, 236, 232, 0.98);
   padding: 28px 18px 36px;
@@ -35,6 +35,37 @@
   min-width: 0;
 }
 
+.schedule-heading {
+  min-width: 0;
+}
+
+.schedule-heading h1 {
+  margin: 0 0 6px;
+  font-size: clamp(26px, 4vw, 36px);
+  line-height: 1.1;
+  font-weight: 740;
+  word-break: break-word;
+}
+
+.schedule-heading__eyebrow,
+.schedule-modal__head p,
+.task-detail-card__top p,
+.task-detail-description p,
+.task-detail-assignees p,
+.task-form-section p {
+  margin: 0 0 8px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(183, 201, 184, 0.88);
+}
+
+.schedule-heading span {
+  color: rgba(170, 181, 174, 0.86);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
 .schedule-back-button {
   width: 46px;
   height: 46px;
@@ -46,39 +77,7 @@
   color: rgba(231, 236, 232, 0.98);
   border: 1px solid rgba(44, 74, 58, 0.62);
   background: rgba(9, 15, 13, 0.54);
-  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
-}
-
-.schedule-back-button:hover {
-  transform: translateY(-1px);
-  border-color: rgba(232, 193, 90, 0.24);
-  background: rgba(14, 22, 19, 0.72);
-}
-
-.schedule-heading {
-  min-width: 0;
-}
-
-.schedule-heading__eyebrow {
-  margin: 0 0 6px;
-  font-size: 12px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(183, 201, 184, 0.88);
-}
-
-.schedule-heading h1 {
-  margin: 0 0 6px;
-  font-size: clamp(26px, 4vw, 36px);
-  line-height: 1.1;
-  font-weight: 740;
-  word-break: break-word;
-}
-
-.schedule-heading span {
-  color: rgba(170, 181, 174, 0.86);
-  font-size: 14px;
-  line-height: 1.45;
+  flex-shrink: 0;
 }
 
 .schedule-header__actions {
@@ -107,127 +106,48 @@
   color: rgba(183, 201, 184, 0.88);
   cursor: pointer;
   font-weight: 700;
-  transition: background 0.18s ease, color 0.18s ease;
 }
 
-.schedule-view-switch button.active {
+.schedule-view-switch button.active,
+.schedule-create-button,
+.primary-action-button,
+.primary-modal-button {
   background: linear-gradient(120deg, #1e441e, #2e6b3e);
   color: rgba(231, 236, 232, 0.98);
 }
 
 .schedule-create-button,
 .primary-action-button,
-.primary-modal-button {
+.primary-modal-button,
+.danger-action-button,
+.secondary-modal-button,
+.ghost-link-button,
+.insight-close-button {
   min-height: 46px;
   padding: 0 16px;
   border-radius: 14px;
-  border: none;
-  background: linear-gradient(120deg, #1e441e, #2e6b3e);
-  color: rgba(231, 236, 232, 0.98);
   font-weight: 740;
   cursor: pointer;
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
-.schedule-create-button:hover,
-.primary-action-button:hover,
-.primary-modal-button:hover {
-  transform: translateY(-1px);
+.schedule-create-button,
+.primary-action-button,
+.primary-modal-button,
+.danger-action-button {
+  border: none;
 }
 
-.schedule-mobile-actions-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.schedule-mobile-icon-button {
-  display: none;
-  width: 46px;
-  height: 46px;
-  padding: 0;
-  border-radius: 14px;
+.secondary-modal-button,
+.ghost-link-button,
+.insight-close-button {
   border: 1px solid rgba(44, 74, 58, 0.62);
-  background: rgba(9, 15, 13, 0.42);
-  color: rgba(231, 236, 232, 0.98);
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+  background: transparent;
+  color: rgba(183, 201, 184, 0.94);
 }
 
-.schedule-mobile-icon-button.active {
-  border-color: rgba(232, 193, 90, 0.28);
-  background: rgba(14, 22, 19, 0.7);
-  box-shadow: 0 0 0 1px rgba(232, 193, 90, 0.08);
-}
-
-.schedule-mobile-icon-button:hover {
-  transform: translateY(-1px);
-  border-color: rgba(232, 193, 90, 0.24);
-}
-
-.schedule-mini-icon {
-  width: 22px;
-  height: 22px;
-  position: relative;
-  display: block;
-}
-
-.schedule-mini-icon--tasks {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 4px;
-}
-
-.schedule-mini-icon--tasks span {
-  display: block;
-  width: 16px;
-  height: 2px;
-  border-radius: 999px;
-  margin: 0 auto;
-  background: linear-gradient(180deg, rgba(232, 193, 90, 0.92), rgba(46, 107, 62, 0.92));
-}
-
-.schedule-mini-icon--locations span:nth-child(1) {
-  position: absolute;
-  inset: 2px auto auto 4px;
-  width: 14px;
-  height: 14px;
-  border-radius: 999px 999px 999px 0;
-  transform: rotate(-45deg);
-  background: linear-gradient(180deg, rgba(232, 193, 90, 0.92), rgba(46, 107, 62, 0.92));
-}
-
-.schedule-mini-icon--locations span:nth-child(2) {
-  position: absolute;
-  top: 8px;
-  left: 9px;
-  width: 4px;
-  height: 4px;
-  border-radius: 999px;
-  background: rgba(9, 15, 13, 0.95);
-}
-
-.schedule-mini-icon--participants span:nth-child(1) {
-  position: absolute;
-  top: 3px;
-  left: 7px;
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, rgba(232, 193, 90, 0.92), rgba(46, 107, 62, 0.92));
-}
-
-.schedule-mini-icon--participants span:nth-child(2) {
-  position: absolute;
-  left: 3px;
-  bottom: 2px;
-  width: 16px;
-  height: 9px;
-  border-radius: 999px 999px 6px 6px;
-  background: linear-gradient(180deg, rgba(232, 193, 90, 0.92), rgba(46, 107, 62, 0.92));
+.danger-action-button {
+  background: linear-gradient(120deg, #7a2020, #a83737);
+  color: white;
 }
 
 .schedule-overview {
@@ -246,21 +166,10 @@
   text-align: left;
   color: rgba(231, 236, 232, 0.98);
   cursor: pointer;
-  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding-left: 15px;
-}
-
-.overview-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(232, 193, 90, 0.24);
 }
 
 .overview-card--active {
   border-color: rgba(232, 193, 90, 0.28);
-  box-shadow: 0 0 0 1px rgba(232, 193, 90, 0.08);
 }
 
 .overview-card p {
@@ -272,35 +181,23 @@
 .overview-card h2 {
   margin: 0;
   font-size: 28px;
-  font-weight: 740;
 }
 
-.overview-card__icon {
-  display: none;
-}
-
-.insight-panel {
-  margin-bottom: 18px;
-  padding: 18px;
+.insight-panel,
+.timeline-list,
+.task-table-card,
+.task-detail-card {
   border-radius: 24px;
   border: 1px solid rgba(44, 74, 58, 0.62);
   background:
     radial-gradient(520px 320px at 35% 18%, rgba(203, 191, 163, 0.05), transparent 70%),
     linear-gradient(165deg, rgba(20, 28, 25, 0.94), rgba(10, 16, 14, 0.82));
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
-  transform-origin: top center;
-  animation: insightOpen 0.28s ease;
 }
 
-@keyframes insightOpen {
-  0% {
-    opacity: 0;
-    transform: translateY(-10px) scaleY(0.94);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scaleY(1);
-  }
+.insight-panel {
+  margin-bottom: 18px;
+  padding: 18px;
 }
 
 .insight-panel__head {
@@ -311,35 +208,9 @@
   margin-bottom: 16px;
 }
 
-.insight-panel__head p {
-  margin: 0 0 6px;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: rgba(183, 201, 184, 0.88);
-}
-
 .insight-panel__head h3 {
   margin: 0;
   font-size: 22px;
-  font-weight: 740;
-}
-
-.insight-close-button {
-  min-height: 40px;
-  padding: 0 14px;
-  border-radius: 12px;
-  border: 1px solid rgba(44, 74, 58, 0.62);
-  background: rgba(9, 15, 13, 0.42);
-  color: rgba(183, 201, 184, 0.94);
-  font-weight: 700;
-  cursor: pointer;
-  transition: border-color 0.18s ease, background 0.18s ease;
-}
-
-.insight-close-button:hover {
-  border-color: rgba(232, 193, 90, 0.24);
-  background: rgba(14, 22, 19, 0.66);
 }
 
 .insight-list {
@@ -348,6 +219,7 @@
 }
 
 .insight-row {
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -356,6 +228,8 @@
   border-radius: 16px;
   border: 1px solid rgba(44, 74, 58, 0.4);
   background: rgba(9, 15, 13, 0.34);
+  color: inherit;
+  text-align: left;
 }
 
 .insight-row strong {
@@ -369,32 +243,15 @@
   font-size: 13px;
 }
 
-.insight-row__meta {
-  flex-shrink: 0;
+.insight-row__meta,
+.insight-link {
   color: rgba(232, 193, 90, 0.92);
   font-size: 13px;
   font-weight: 700;
 }
 
 .insight-link {
-  flex-shrink: 0;
-  min-height: 36px;
-  padding: 0 12px;
-  border-radius: 12px;
-  display: inline-flex;
-  align-items: center;
   text-decoration: none;
-  border: 1px solid rgba(44, 74, 58, 0.62);
-  color: rgba(183, 201, 184, 0.94);
-  background: rgba(9, 15, 13, 0.42);
-  font-size: 13px;
-  font-weight: 700;
-  transition: border-color 0.18s ease, background 0.18s ease;
-}
-
-.insight-link:hover {
-  border-color: rgba(232, 193, 90, 0.24);
-  background: rgba(14, 22, 19, 0.66);
 }
 
 .schedule-layout {
@@ -406,20 +263,7 @@
 
 .schedule-main,
 .schedule-side {
-  display: grid;
-  gap: 16px;
   min-width: 0;
-}
-
-.timeline-list,
-.task-table-card,
-.task-detail-card {
-  border-radius: 24px;
-  border: 1px solid rgba(44, 74, 58, 0.62);
-  background:
-    radial-gradient(520px 320px at 35% 18%, rgba(203, 191, 163, 0.05), transparent 70%),
-    linear-gradient(165deg, rgba(20, 28, 25, 0.94), rgba(10, 16, 14, 0.82));
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
 }
 
 .timeline-list {
@@ -445,11 +289,6 @@
   background: rgba(9, 15, 13, 0.4);
   color: inherit;
   cursor: pointer;
-  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
-}
-
-.task-card:hover {
-  transform: translateY(-1px);
 }
 
 .task-card.active {
@@ -518,15 +357,6 @@
   font-size: 13px;
   border: 1px solid rgba(44, 74, 58, 0.52);
   background: rgba(9, 15, 13, 0.46);
-  color: rgba(231, 236, 232, 0.94);
-}
-
-.task-inline-detail {
-  display: none;
-}
-
-.task-inline-detail__inner {
-  padding: 14px;
 }
 
 .task-table-card {
@@ -556,11 +386,6 @@
   background: transparent;
   color: rgba(231, 236, 232, 0.96);
   cursor: pointer;
-  transition: background 0.18s ease;
-}
-
-.task-table-row:hover {
-  background: rgba(9, 15, 13, 0.28);
 }
 
 .desktop-only {
@@ -569,22 +394,13 @@
 
 .task-detail-card {
   padding: 18px;
-}
-
-.task-detail-card__top p,
-.task-detail-description p,
-.task-detail-assignees p {
-  margin: 0 0 8px;
-  color: rgba(183, 201, 184, 0.88);
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
+  position: sticky;
+  top: 18px;
 }
 
 .task-detail-card__top h2 {
   margin: 0;
   font-size: 24px;
-  font-weight: 740;
   word-break: break-word;
 }
 
@@ -632,46 +448,38 @@
 }
 
 .ghost-link-button {
-  min-height: 46px;
-  padding: 0 16px;
-  border-radius: 14px;
   display: inline-flex;
   align-items: center;
   text-decoration: none;
-  border: 1px solid rgba(44, 74, 58, 0.62);
-  background: transparent;
-  color: rgba(183, 201, 184, 0.94);
-  font-weight: 700;
-  transition: border-color 0.18s ease, background 0.18s ease;
-}
-
-.ghost-link-button:hover {
-  border-color: rgba(232, 193, 90, 0.24);
-  background: rgba(14, 22, 19, 0.66);
 }
 
 .task-card.sand,
-.task-detail-card.sand {
+.task-detail-card.sand,
+.mobile-task-detail.sand {
   box-shadow: inset 0 0 0 1px rgba(232, 193, 90, 0.12);
 }
 
 .task-card.green,
-.task-detail-card.green {
+.task-detail-card.green,
+.mobile-task-detail.green {
   box-shadow: inset 0 0 0 1px rgba(46, 107, 62, 0.22);
 }
 
 .task-card.cyan,
-.task-detail-card.cyan {
+.task-detail-card.cyan,
+.mobile-task-detail.cyan {
   box-shadow: inset 0 0 0 1px rgba(40, 210, 210, 0.16);
 }
 
 .task-card.violet,
-.task-detail-card.violet {
+.task-detail-card.violet,
+.mobile-task-detail.violet {
   box-shadow: inset 0 0 0 1px rgba(208, 97, 255, 0.18);
 }
 
 .task-card.lime,
-.task-detail-card.lime {
+.task-detail-card.lime,
+.mobile-task-detail.lime {
   box-shadow: inset 0 0 0 1px rgba(112, 255, 93, 0.18);
 }
 
@@ -688,12 +496,11 @@
   position: fixed;
   top: 50%;
   left: 50%;
-  right: auto;
-  bottom: auto;
   translate: -50% -50%;
-  transform: none;
   width: calc(100% - 28px);
   max-width: 520px;
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
   z-index: 45;
   padding: 24px;
   border-radius: 24px;
@@ -708,14 +515,6 @@
   margin-bottom: 18px;
 }
 
-.schedule-modal__head p {
-  margin: 0 0 8px;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: rgba(183, 201, 184, 0.88);
-}
-
 .schedule-modal__head h3 {
   margin: 0;
   font-size: 26px;
@@ -727,7 +526,8 @@
 }
 
 .schedule-modal__form input,
-.schedule-modal__form textarea {
+.schedule-modal__form textarea,
+.schedule-modal__form select {
   width: 100%;
   border-radius: 14px;
   border: 1px solid rgba(44, 74, 58, 0.62);
@@ -736,15 +536,11 @@
   padding: 14px;
   outline: none;
   font-size: 14px;
-  resize: vertical;
+  font-family: inherit;
 }
 
-.schedule-modal__form input:focus,
-.schedule-modal__form textarea:focus {
-  border-color: rgba(232, 193, 90, 0.34);
-  box-shadow:
-    0 0 0 2px rgba(232, 193, 90, 0.08),
-    0 0 0 5px rgba(111, 166, 106, 0.04);
+.schedule-modal__form textarea {
+  resize: vertical;
 }
 
 .double-input-row {
@@ -753,55 +549,37 @@
   gap: 10px;
 }
 
+.task-form-section {
+  display: grid;
+  gap: 10px;
+}
+
 .schedule-modal__actions {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+  margin-top: 4px;
 }
 
-.secondary-modal-button {
-  min-height: 46px;
-  padding: 0 16px;
+.error {
+  width: 100%;
+  margin-bottom: 14px;
+  padding: 12px 14px;
   border-radius: 14px;
-  border: 1px solid rgba(44, 74, 58, 0.62);
-  background: transparent;
-  color: rgba(183, 201, 184, 0.94);
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.secondary-modal-button:hover {
-  border-color: rgba(232, 193, 90, 0.24);
-  background: rgba(14, 22, 19, 0.66);
-}
-
-@keyframes taskInlineReveal {
-  0% {
-    opacity: 0;
-    transform: translateY(-8px) scaleY(0.96);
-    max-height: 0;
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scaleY(1);
-    max-height: 800px;
-  }
-}
-
-@keyframes taskInlineContentFade {
-  0% {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  border: 1px solid rgba(255, 184, 184, 0.22);
+  background: rgba(122, 32, 32, 0.18);
+  color: rgba(255, 214, 214, 0.98);
+  font-size: 14px;
+  line-height: 1.45;
 }
 
 @media (max-width: 980px) {
   .schedule-layout {
     grid-template-columns: 1fr;
+  }
+
+  .desktop-only {
+    display: none;
   }
 }
 
@@ -810,166 +588,53 @@
     padding: 20px 14px 28px;
   }
 
-  .schedule-shell {
-    max-width: 100%;
-  }
-
   .schedule-header {
     flex-direction: column;
-    gap: 14px;
-    margin-bottom: 18px;
-  }
-
-  .schedule-header__left {
-    width: 100%;
-    align-items: flex-start;
   }
 
   .schedule-header__actions {
     width: 100%;
-    display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 14px;
   }
 
   .schedule-view-switch {
     width: 100%;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0;
   }
 
-  .schedule-view-switch button {
-    min-width: 0;
-    width: 100%;
-    height: 48px;
-    display: grid;
-    place-items: center;
-  }
-
-  .schedule-mobile-actions-row {
-    width: 100%;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) repeat(3, 48px);
-    align-items: center;
-    gap: 10px;
-  }
-
+  .schedule-view-switch button,
   .schedule-create-button {
     width: 100%;
     min-width: 0;
     height: 48px;
-    padding: 0 16px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    white-space: nowrap;
-    border-radius: 14px;
-  }
-
-  .schedule-mobile-icon-button {
-    display: inline-flex;
-    width: 48px;
-    height: 48px;
-    border-radius: 14px;
   }
 
   .schedule-overview {
-    display: none;
+    grid-template-columns: 1fr;
   }
 
-  .insight-panel {
-    padding: 16px;
-    margin-bottom: 16px;
-  }
-
-  .insight-panel__head {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
+  .insight-panel__head,
   .insight-row {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .insight-row__meta,
-  .insight-link {
-    align-self: flex-start;
-  }
-
-  .desktop-only {
-    display: none;
-  }
-
   .timeline-list {
-    gap: 14px;
-  }
-
-  .task-block {
-    gap: 10px;
+    padding: 12px;
   }
 
   .task-card {
     grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .task-inline-detail {
-    display: block;
-    overflow: hidden;
-    border-radius: 18px;
-    border: 1px solid rgba(44, 74, 58, 0.42);
-    background:
-      radial-gradient(520px 320px at 35% 18%, rgba(203, 191, 163, 0.04), transparent 70%),
-      linear-gradient(165deg, rgba(16, 24, 21, 0.96), rgba(9, 15, 13, 0.9));
-    animation: taskInlineReveal 0.32s cubic-bezier(0.22, 1, 0.36, 1);
-    transform-origin: top;
-  }
-
-  .task-inline-detail__inner {
-    padding: 14px;
-    animation: taskInlineContentFade 0.28s ease;
-  }
-
-  .task-inline-detail.sand,
-  .task-block.open.sand .task-card {
-    box-shadow: inset 0 0 0 1px rgba(232, 193, 90, 0.12);
-  }
-
-  .task-inline-detail.green,
-  .task-block.open.green .task-card {
-    box-shadow: inset 0 0 0 1px rgba(46, 107, 62, 0.22);
-  }
-
-  .task-inline-detail.cyan,
-  .task-block.open.cyan .task-card {
-    box-shadow: inset 0 0 0 1px rgba(40, 210, 210, 0.16);
-  }
-
-  .task-inline-detail.violet,
-  .task-block.open.violet .task-card {
-    box-shadow: inset 0 0 0 1px rgba(208, 97, 255, 0.18);
-  }
-
-  .task-inline-detail.lime,
-  .task-block.open.lime .task-card {
-    box-shadow: inset 0 0 0 1px rgba(112, 255, 93, 0.18);
   }
 
   .task-card__top {
-    flex-direction: row;
-    align-items: flex-start;
+    flex-direction: column;
   }
 
   .task-card__top span {
-    max-width: 40%;
-  }
-
-  .task-card.active {
-    border-bottom-left-radius: 14px;
-    border-bottom-right-radius: 14px;
+    text-align: left;
   }
 
   .task-table-header {
@@ -981,21 +646,15 @@
     gap: 6px;
   }
 
-  .task-detail-meta {
-    margin: 0 0 16px;
-  }
-
-  .task-detail-description {
-    margin-bottom: 16px;
-  }
-
   .task-detail-actions {
-    margin-top: 16px;
     flex-direction: column;
   }
 
   .ghost-link-button,
-  .primary-action-button {
+  .primary-action-button,
+  .danger-action-button,
+  .secondary-modal-button,
+  .primary-modal-button {
     width: 100%;
     justify-content: center;
   }
@@ -1006,108 +665,11 @@
 
   .schedule-modal {
     padding: 20px 16px 16px;
+    width: calc(100vw - 28px);
+    max-height: calc(100dvh - 28px);
   }
 
   .schedule-modal__actions {
     flex-direction: column-reverse;
-  }
-
-  .secondary-modal-button,
-  .primary-modal-button {
-    width: 100%;
-  }
-}
-.danger-action-button {
-  min-height: 46px;
-  padding: 0 16px;
-  border-radius: 14px;
-  border: none;
-  background: linear-gradient(120deg, #7a2020, #a83737);
-  color: white;
-  font-weight: 740;
-  cursor: pointer;
-  transition: transform 0.18s ease;
-}
-
-.danger-action-button:hover {
-  transform: translateY(-1px);
-}
-
-.task-form-section {
-  display: grid;
-  gap: 10px;
-}
-
-.task-form-section p {
-  margin: 0;
-  font-size: 12px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(183, 201, 184, 0.88);
-}
-
-.task-form-assignees {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.task-form-assignee {
-  min-height: 36px;
-  padding: 0 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(44, 74, 58, 0.62);
-  background: rgba(9, 15, 13, 0.42);
-  color: rgba(183, 201, 184, 0.94);
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.task-form-assignee.selected {
-  border-color: rgba(232, 193, 90, 0.28);
-  background: linear-gradient(120deg, rgba(30, 68, 30, 0.94), rgba(46, 107, 62, 0.88));
-  color: rgba(231, 236, 232, 0.98);
-}
-
-.schedule-modal__form select {
-  width: 100%;
-  min-height: 48px;
-  border-radius: 14px;
-  border: 1px solid rgba(44, 74, 58, 0.62);
-  background: rgba(9, 15, 13, 0.54);
-  color: rgba(231, 236, 232, 0.98);
-  padding: 0 14px;
-  outline: none;
-  font-size: 14px;
-}
-
-.schedule-modal__form select:focus {
-  border-color: rgba(232, 193, 90, 0.34);
-  box-shadow:
-    0 0 0 2px rgba(232, 193, 90, 0.08),
-    0 0 0 5px rgba(111, 166, 106, 0.04);
-}
-
-@media (max-width: 640px) {
-  .danger-action-button {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .schedule-mobile-actions-row {
-    grid-template-columns: minmax(0, 1fr) repeat(3, 48px);
-  }
-}
-
-.schedule-modal {
-  max-height: calc(100dvh - 32px);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
-@media (max-width: 640px) {
-  .schedule-modal {
-    width: calc(100vw - 28px);
-    max-height: calc(100dvh - 28px);
   }
 }

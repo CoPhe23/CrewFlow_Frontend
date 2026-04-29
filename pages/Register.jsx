@@ -1,11 +1,67 @@
 import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import "../styles/register.css";
 import { fadeUp, pageMotion } from "../lib/motion";
+import { apiRequest } from "../lib/api";
 
 export const Register = () => {
+  const navigate = useNavigate();
+
   const [showPw, setShowPw] = useState(false);
   const [showConfirmPw, setShowConfirmPw] = useState(false);
+
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordAgain, setPasswordAgain] = useState("");
+
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    if (!username.trim() || !email.trim() || !password.trim()) {
+      setError("Tölts ki minden kötelező mezőt.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("A jelszó legyen legalább 6 karakter.");
+      return;
+    }
+
+    if (password !== passwordAgain) {
+      setError("A két jelszó nem egyezik.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const data = await apiRequest("/auth/register", "POST", {
+        name: username.trim(),
+        email: email.trim(),
+        password,
+      });
+
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+      }
+
+      if (data.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+      }
+
+      navigate("/home");
+    } catch (err) {
+      setError(err.message || "Sikertelen regisztráció.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <motion.div
@@ -31,7 +87,9 @@ export const Register = () => {
           />
           <div className="brandTxt">
             <div className="brandName">CrewFlow</div>
-            <div className="brandTag">Rendezvényszervezés, gyorsan egy helyen.</div>
+            <div className="brandTag">
+              Rendezvényszervezés, gyorsan egy helyen.
+            </div>
           </div>
         </motion.div>
 
@@ -44,7 +102,7 @@ export const Register = () => {
               </div>
             </header>
 
-            <form className="form">
+            <form className="form" onSubmit={handleRegister}>
               <label className="field">
                 <span className="label">Username</span>
                 <motion.div className="inputWrap" whileFocus={{ scale: 1.005 }}>
@@ -53,6 +111,8 @@ export const Register = () => {
                     type="text"
                     placeholder="pl. Felhasznalo"
                     autoComplete="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                   />
                 </motion.div>
               </label>
@@ -66,6 +126,8 @@ export const Register = () => {
                     placeholder="nev@crewflow.app"
                     autoComplete="email"
                     inputMode="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                   />
                 </motion.div>
               </label>
@@ -73,12 +135,17 @@ export const Register = () => {
               <label className="field">
                 <span className="label">Jelszó</span>
                 <div className="pwRow">
-                  <motion.div className="inputWrap pwInputWrap" whileFocus={{ scale: 1.005 }}>
+                  <motion.div
+                    className="inputWrap pwInputWrap"
+                    whileFocus={{ scale: 1.005 }}
+                  >
                     <input
                       className="inputEl"
                       type={showPw ? "text" : "password"}
-                      placeholder="Legalább 8 karakter"
+                      placeholder="Legalább 6 karakter"
                       autoComplete="new-password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                     />
                   </motion.div>
 
@@ -86,7 +153,9 @@ export const Register = () => {
                     className="pwBtn"
                     type="button"
                     onClick={() => setShowPw((v) => !v)}
-                    aria-label={showPw ? "Jelszó elrejtése" : "Jelszó megjelenítése"}
+                    aria-label={
+                      showPw ? "Jelszó elrejtése" : "Jelszó megjelenítése"
+                    }
                     whileTap={{ scale: 0.96 }}
                   >
                     {showPw ? "Elrejt" : "Mutat"}
@@ -97,12 +166,17 @@ export const Register = () => {
               <label className="field">
                 <span className="label">Jelszó újra</span>
                 <div className="pwRow">
-                  <motion.div className="inputWrap pwInputWrap" whileFocus={{ scale: 1.005 }}>
+                  <motion.div
+                    className="inputWrap pwInputWrap"
+                    whileFocus={{ scale: 1.005 }}
+                  >
                     <input
                       className="inputEl"
                       type={showConfirmPw ? "text" : "password"}
                       placeholder="Írd be újra a jelszót"
                       autoComplete="new-password"
+                      value={passwordAgain}
+                      onChange={(e) => setPasswordAgain(e.target.value)}
                     />
                   </motion.div>
 
@@ -122,16 +196,24 @@ export const Register = () => {
                 </div>
               </label>
 
-              <motion.button className="btn" type="submit" whileHover={{ y: -1 }} whileTap={{ scale: 0.985 }}>
-                Fiók létrehozása
+              {error && <div className="error">{error}</div>}
+
+              <motion.button
+                className="btn"
+                type="submit"
+                disabled={loading}
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.985 }}
+              >
+                {loading ? "Fiók létrehozása..." : "Fiók létrehozása"}
                 <span className="btnDot" aria-hidden="true" />
               </motion.button>
 
               <div className="foot">
                 <span>Van már fiókod?</span>
-                <a className="link" href="/login">
+                <Link className="link" to="/login">
                   Bejelentkezés
-                </a>
+                </Link>
               </div>
             </form>
           </div>

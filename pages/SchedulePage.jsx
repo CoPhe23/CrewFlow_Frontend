@@ -1,10 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link, useParams } from "react-router-dom";
+import { apiRequest } from "../lib/api";
 import "../styles/schedule-page.css";
 import { backdropFade, fadeUp, pageMotion, popIn, tabPanel } from "../lib/motion";
 
-const CURRENT_USER_ID = 1;
 const EMPTY_TASK_FORM = {
   title: "",
   category: "",
@@ -13,9 +13,13 @@ const EMPTY_TASK_FORM = {
   location: "",
   address: "",
   description: "",
-  assignees: [],
   color: "green",
+  assignedTo: "",
 };
+
+function normalizeTime(value) {
+  return value || "--:--";
+}
 
 export default function SchedulePage() {
   const { id } = useParams();
@@ -23,95 +27,69 @@ export default function SchedulePage() {
   const [viewMode, setViewMode] = useState("timeline");
   const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [showTaskModal, setShowTaskModal] = useState(false);
+  const [showMobileDetail, setShowMobileDetail] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [taskForm, setTaskForm] = useState(EMPTY_TASK_FORM);
   const [insightOpen, setInsightOpen] = useState(false);
   const [insightTab, setInsightTab] = useState("");
 
-  const event = {
-    id,
-    name: "Tavaszi Iskolabál",
-    date: "2025. október 12.",
-    location: "Kandó aula",
-  };
+  const [eventData, setEventData] = useState(null);
+  const [tasks, setTasks] = useState([]);
+  const [participants, setParticipants] = useState([]);
 
-  const participants = [
-    { id: 1, name: "Máté Bárdos", role: "Admin" },
-    { id: 2, name: "Anna Kovács", role: "Admin" },
-    { id: 3, name: "Bence Tóth", role: "Tag" },
-    { id: 4, name: "Lili Nagy", role: "Tag" },
-    { id: 5, name: "Vivien Körtvélyesi", role: "Tag" },
-    { id: 6, name: "Regina Prekopa", role: "Tag" },
-  ];
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const currentUser = participants.find((participant) => participant.id === CURRENT_USER_ID);
-  const isAdmin = currentUser?.role === "Admin";
+  const isAdmin = eventData?.role === "ADMIN";
 
-  const [tasks, setTasks] = useState([
-    {
-      id: 1,
-      title: "Regisztráció",
-      category: "Frontdesk",
-      start: "07:45",
-      end: "08:30",
-      location: "Főbejárat",
-      address: "Kecskemét, aula főbejárat",
-      description: "Vendégek fogadása, névsor ellenőrzése, gyors eligazítás a belépésnél.",
-      assignees: [1, 2],
-      color: "sand",
-    },
-    {
-      id: 2,
-      title: "Megnyitó",
-      category: "Program",
-      start: "08:30",
-      end: "08:45",
-      location: "Nagyszínpad",
-      address: "Kecskemét, aula színpad",
-      description: "Mikrofonok ellenőrzése, fellépők indítása, rövid koordináció.",
-      assignees: [3],
-      color: "green",
-    },
-    {
-      id: 3,
-      title: "Jégtörő játékok",
-      category: "Program",
-      start: "08:45",
-      end: "09:15",
-      location: "Központi tér",
-      address: "Kecskemét, aula központi tér",
-      description: "Közös játék levezetése, résztvevők mozgatása, fotós koordinálás.",
-      assignees: [4, 5],
-      color: "cyan",
-    },
-    {
-      id: 4,
-      title: "WS bemutatás",
-      category: "Workshop",
-      start: "10:15",
-      end: "10:30",
-      location: "2-es terem",
-      address: "Kecskemét, könyves kálmán krt 32",
-      description: "Workshop felvezetése, technika ellenőrzése, előadó támogatása.",
-      assignees: [2, 6],
-      color: "violet",
-    },
-    {
-      id: 5,
-      title: "Chill room felügyelet",
-      category: "Support",
-      start: "10:00",
-      end: "10:30",
-      location: "Pihenő terem",
-      address: "Kecskemét, pihenő terem",
-      description: "Rend fenntartása, kérdések kezelése, kisebb problémák elhárítása.",
-      assignees: [1],
-      color: "lime",
-    },
-  ]);
+  useEffect(() => {
+    loadScheduleData();
+  }, [id]);
+
+  async function loadScheduleData() {
+    try {
+      setLoading(true);
+      setError("");
+
+      const eventRes = await apiRequest(`/events/${id}`, "GET");
+      const tasksRes = await apiRequest(`/tasks/events/${id}/tasks`, "GET");
+      const membersRes = await apiRequest(`/events/${id}/members`, "GET");
+
+      setEventData(eventRes);
+      setParticipants(membersRes.members || []);
+
+      const normalizedTasks = (tasksRes || []).map((task) => ({
+        id: task.id,
+        title: task.title || "Névtelen blokk",
+        category: task.category || (task.status === "DONE" ? "Kész" : "Feladat"),
+        start: normalizeTime(task.start),
+        end: normalizeTime(task.end),
+        location: task.location || "Nincs megadva",
+        address: task.address || task.location || "Nincs megadva",
+        mapsUrl: task.mapsUrl || "",
+        description: task.description || "Nincs leírás",
+        status: task.status || "OPEN",
+        color: task.status === "DONE" ? "lime" : task.color || "green",
+        originalColor: task.color || "green",
+        assignees: task.assignedTo ? [task.assignedTo] : [],
+        assignedTo: task.assignedTo || "",
+      }));
+
+      setTasks(normalizedTasks);
+
+      if (!selectedTaskId && normalizedTasks.length > 0) {
+        setSelectedTaskId(normalizedTasks[0].id);
+      }
+    } catch (err) {
+      setError(err.message || "Nem sikerült betölteni a beosztást.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const participantMap = useMemo(() => {
-    return Object.fromEntries(participants.map((p) => [p.id, p]));
+    return Object.fromEntries(participants.map((p) => [p.userId, p]));
   }, [participants]);
 
   const participantTaskCounts = useMemo(() => {
@@ -123,7 +101,7 @@ export default function SchedulePage() {
     }, {});
   }, [tasks]);
 
-  const selectedTask = tasks.find((task) => task.id === selectedTaskId) || tasks[0];
+  const selectedTask = tasks.find((task) => task.id === selectedTaskId) || null;
 
   const uniqueLocations = useMemo(() => {
     const seen = new Map();
@@ -133,6 +111,7 @@ export default function SchedulePage() {
         seen.set(task.location, {
           name: task.location,
           address: task.address,
+          mapsUrl: task.mapsUrl,
         });
       }
     });
@@ -140,8 +119,17 @@ export default function SchedulePage() {
     return Array.from(seen.values());
   }, [tasks]);
 
-  function getMapsUrl(address) {
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+  function getMapsUrl(taskOrAddress) {
+    if (typeof taskOrAddress === "object") {
+      if (taskOrAddress.mapsUrl) return taskOrAddress.mapsUrl;
+
+      const query = taskOrAddress.address || taskOrAddress.location || "";
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+    }
+
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      taskOrAddress || ""
+    )}`;
   }
 
   function toggleInsight(tab) {
@@ -157,6 +145,7 @@ export default function SchedulePage() {
 
   function openCreateTaskModal() {
     if (!isAdmin) return;
+
     setEditingTaskId(null);
     setTaskForm(EMPTY_TASK_FORM);
     setShowTaskModal(true);
@@ -164,18 +153,22 @@ export default function SchedulePage() {
 
   function openEditTaskModal(task) {
     if (!isAdmin || !task) return;
+
     setEditingTaskId(task.id);
+
     setTaskForm({
-      title: task.title,
-      category: task.category,
-      start: task.start,
-      end: task.end,
-      location: task.location,
-      address: task.address,
-      description: task.description,
-      assignees: task.assignees,
-      color: task.color,
+      title: task.title || "",
+      category: task.category || "",
+      start: task.start === "--:--" ? "" : task.start || "",
+      end: task.end === "--:--" ? "" : task.end || "",
+      location: task.location === "Nincs megadva" ? "" : task.location || "",
+      address: task.address === "Nincs megadva" ? "" : task.address || "",
+      description: task.description === "Nincs leírás" ? "" : task.description || "",
+      color: task.originalColor || task.color || "green",
+      assignedTo: task.assignedTo || "",
     });
+
+    setShowMobileDetail(false);
     setShowTaskModal(true);
   }
 
@@ -183,66 +176,111 @@ export default function SchedulePage() {
     setShowTaskModal(false);
     setEditingTaskId(null);
     setTaskForm(EMPTY_TASK_FORM);
+    setActionLoading(false);
   }
 
   function updateTaskForm(field, value) {
     setTaskForm((prevForm) => ({ ...prevForm, [field]: value }));
   }
 
-  function toggleAssignee(participantId) {
-    setTaskForm((prevForm) => {
-      const hasAssignee = prevForm.assignees.includes(participantId);
-      return {
-        ...prevForm,
-        assignees: hasAssignee
-          ? prevForm.assignees.filter((id) => id !== participantId)
-          : [...prevForm.assignees, participantId],
-      };
-    });
+  function openTaskDetails(taskId) {
+    setSelectedTaskId(taskId);
+    setShowMobileDetail(true);
   }
 
-  function handleTaskSubmit(e) {
+  async function handleTaskSubmit(e) {
     e.preventDefault();
-    if (!isAdmin || !taskForm.title.trim()) return;
 
-    const normalizedTask = {
-      title: taskForm.title.trim(),
-      category: taskForm.category.trim() || "Feladat",
-      start: taskForm.start.trim() || "--:--",
-      end: taskForm.end.trim() || "--:--",
-      location: taskForm.location.trim() || "Nincs megadva",
-      address: taskForm.address.trim() || taskForm.location.trim() || "Nincs megadva",
-      description: taskForm.description.trim() || "Nincs leírás megadva.",
-      assignees: taskForm.assignees,
-      color: taskForm.color || "green",
-    };
-
-    if (editingTaskId) {
-      setTasks((prevTasks) =>
-        prevTasks.map((task) =>
-          task.id === editingTaskId ? { ...task, ...normalizedTask } : task
-        )
-      );
-      setSelectedTaskId(editingTaskId);
-    } else {
-      const newTask = {
-        id: Date.now(),
-        ...normalizedTask,
-      };
-      setTasks((prevTasks) => [...prevTasks, newTask]);
-      setSelectedTaskId(newTask.id);
-    }
-
-    closeTaskModal();
-  }
-
-  function handleDeleteTask(taskId) {
     if (!isAdmin) return;
 
-    setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
-    if (selectedTaskId === taskId) {
-      setSelectedTaskId(null);
+    if (!taskForm.title.trim()) {
+      setError("A blokk címe kötelező.");
+      return;
     }
+
+    const mapsQuery = taskForm.address.trim() || taskForm.location.trim();
+
+    const mapsUrl = mapsQuery
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+          mapsQuery
+        )}`
+      : "";
+
+    const payload = {
+      eventId: id,
+      title: taskForm.title.trim(),
+      category: taskForm.category.trim(),
+      start: taskForm.start.trim(),
+      end: taskForm.end.trim(),
+      location: taskForm.location.trim(),
+      address: taskForm.address.trim(),
+      mapsUrl,
+      description: taskForm.description.trim(),
+      color: taskForm.color,
+      assignedTo: taskForm.assignedTo || null,
+    };
+
+    try {
+      setActionLoading(true);
+      setError("");
+
+      if (editingTaskId) {
+        await apiRequest(`/tasks/${editingTaskId}`, "PATCH", payload);
+      } else {
+        await apiRequest("/tasks", "POST", payload);
+      }
+
+      closeTaskModal();
+      await loadScheduleData();
+    } catch (err) {
+      setError(err.message || "Nem sikerült menteni a blokkot.");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handleCompleteTask(taskId) {
+    try {
+      setError("");
+      await apiRequest(`/tasks/${taskId}/complete`, "PATCH");
+      await loadScheduleData();
+    } catch (err) {
+      setError(err.message || "Nem sikerült készre állítani.");
+    }
+  }
+
+  async function handleReopenTask(taskId) {
+    try {
+      setError("");
+      await apiRequest(`/tasks/${taskId}/reopen`, "PATCH");
+      await loadScheduleData();
+    } catch (err) {
+      setError(err.message || "Nem sikerült visszanyitni.");
+    }
+  }
+
+  async function handleDeleteTask(taskId) {
+    try {
+      setError("");
+      await apiRequest(`/tasks/${taskId}`, "DELETE");
+
+      setShowMobileDetail(false);
+      setSelectedTaskId(null);
+
+      await loadScheduleData();
+    } catch (err) {
+      setError(err.message || "Nem sikerült törölni.");
+    }
+  }
+
+  if (loading) {
+    return (
+      <main className="schedule-page">
+        <div className="schedule-shell">
+          <h2>Betöltés...</h2>
+        </div>
+      </main>
+    );
   }
 
   return (
@@ -257,7 +295,7 @@ export default function SchedulePage() {
         <motion.header className="schedule-header" variants={fadeUp}>
           <div className="schedule-header__left">
             <Link
-              to={`/event/${event.id}`}
+              to={`/event/${id}`}
               className="schedule-back-button"
               aria-label="Vissza az eseményhez"
             >
@@ -265,10 +303,15 @@ export default function SchedulePage() {
             </Link>
 
             <div className="schedule-heading">
-              <p className="schedule-heading__eyebrow">Beosztás {isAdmin ? "• Admin" : ""}</p>
-              <h1>{event.name}</h1>
+              <p className="schedule-heading__eyebrow">
+                Beosztás {isAdmin ? "• Admin" : ""}
+              </p>
+
+              <h1>{eventData?.name || "Esemény"}</h1>
+
               <span>
-                {event.date} • {event.location}
+                {eventData?.description || "Nincs megadva leírás"} •{" "}
+                {eventData?.membersCount || participants.length || 1} fő
               </span>
             </div>
           </div>
@@ -276,13 +319,16 @@ export default function SchedulePage() {
           <div className="schedule-header__actions">
             <div className="schedule-view-switch">
               <motion.button
+                type="button"
                 className={viewMode === "timeline" ? "active" : ""}
                 onClick={() => setViewMode("timeline")}
                 whileTap={{ scale: 0.97 }}
               >
                 Idővonal
               </motion.button>
+
               <motion.button
+                type="button"
                 className={viewMode === "list" ? "active" : ""}
                 onClick={() => setViewMode("list")}
                 whileTap={{ scale: 0.97 }}
@@ -291,64 +337,30 @@ export default function SchedulePage() {
               </motion.button>
             </div>
 
-            <div className="schedule-mobile-actions-row">
-              {isAdmin && (
-                <motion.button
-                  className="schedule-create-button"
-                  onClick={openCreateTaskModal}
-                  whileHover={{ y: -1 }}
-                  whileTap={{ scale: 0.97 }}
-                >
-                  + Új blokk
-                </motion.button>
-              )}
-
+            {isAdmin && (
               <motion.button
-                className={`schedule-mobile-icon-button ${insightOpen && insightTab === "tasks" ? "active" : ""}`}
-                onClick={() => toggleInsight("tasks")}
-                whileTap={{ scale: 0.95 }}
-                aria-label="Feladatok áttekintése"
-                title="Feladatok"
+                type="button"
+                className="schedule-create-button"
+                onClick={openCreateTaskModal}
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.97 }}
               >
-                <span className="schedule-mini-icon schedule-mini-icon--tasks" aria-hidden="true">
-                  <span />
-                  <span />
-                  <span />
-                </span>
+                + Új blokk
               </motion.button>
-
-              <motion.button
-                className={`schedule-mobile-icon-button ${insightOpen && insightTab === "locations" ? "active" : ""}`}
-                onClick={() => toggleInsight("locations")}
-                whileTap={{ scale: 0.95 }}
-                aria-label="Helyszínek áttekintése"
-                title="Helyszínek"
-              >
-                <span className="schedule-mini-icon schedule-mini-icon--locations" aria-hidden="true">
-                  <span />
-                  <span />
-                </span>
-              </motion.button>
-
-              <motion.button
-                className={`schedule-mobile-icon-button ${insightOpen && insightTab === "participants" ? "active" : ""}`}
-                onClick={() => toggleInsight("participants")}
-                whileTap={{ scale: 0.95 }}
-                aria-label="Résztvevők áttekintése"
-                title="Emberek"
-              >
-                <span className="schedule-mini-icon schedule-mini-icon--participants" aria-hidden="true">
-                  <span />
-                  <span />
-                </span>
-              </motion.button>
-            </div>
+            )}
           </div>
         </motion.header>
 
+        {error && <div className="error">{error}</div>}
+
         <motion.section className="schedule-overview" variants={fadeUp}>
           <motion.button
-            className={insightOpen && insightTab === "tasks" ? "overview-card overview-card--active" : "overview-card"}
+            type="button"
+            className={
+              insightOpen && insightTab === "tasks"
+                ? "overview-card overview-card--active"
+                : "overview-card"
+            }
             onClick={() => toggleInsight("tasks")}
             whileHover={{ y: -2 }}
             whileTap={{ scale: 0.985 }}
@@ -358,7 +370,12 @@ export default function SchedulePage() {
           </motion.button>
 
           <motion.button
-            className={insightOpen && insightTab === "locations" ? "overview-card overview-card--active" : "overview-card"}
+            type="button"
+            className={
+              insightOpen && insightTab === "locations"
+                ? "overview-card overview-card--active"
+                : "overview-card"
+            }
             onClick={() => toggleInsight("locations")}
             whileHover={{ y: -2 }}
             whileTap={{ scale: 0.985 }}
@@ -368,7 +385,12 @@ export default function SchedulePage() {
           </motion.button>
 
           <motion.button
-            className={insightOpen && insightTab === "participants" ? "overview-card overview-card--active" : "overview-card"}
+            type="button"
+            className={
+              insightOpen && insightTab === "participants"
+                ? "overview-card overview-card--active"
+                : "overview-card"
+            }
             onClick={() => toggleInsight("participants")}
             whileHover={{ y: -2 }}
             whileTap={{ scale: 0.985 }}
@@ -398,6 +420,7 @@ export default function SchedulePage() {
                 </div>
 
                 <motion.button
+                  type="button"
                   className="insight-close-button"
                   onClick={() => {
                     setInsightOpen(false);
@@ -412,9 +435,11 @@ export default function SchedulePage() {
               {insightTab === "tasks" && (
                 <div className="insight-list">
                   {tasks.map((task, index) => (
-                    <motion.div
+                    <motion.button
+                      type="button"
                       className="insight-row"
                       key={task.id}
+                      onClick={() => openTaskDetails(task.id)}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.2, delay: index * 0.03 }}
@@ -426,8 +451,17 @@ export default function SchedulePage() {
                         </span>
                       </div>
 
-                      <div className="insight-row__meta">{task.assignees.length} fő</div>
-                    </motion.div>
+                      <div className="insight-row__meta">
+                        {task.assignees.length > 0
+                          ? task.assignees
+                              .map(
+                                (assigneeId) =>
+                                  participantMap[assigneeId]?.name || "Ismeretlen"
+                              )
+                              .join(", ")
+                          : "Nincs felelős"}
+                      </div>
+                    </motion.button>
                   ))}
                 </div>
               )}
@@ -449,7 +483,7 @@ export default function SchedulePage() {
 
                       <a
                         className="insight-link"
-                        href={getMapsUrl(location.address)}
+                        href={location.mapsUrl || getMapsUrl(location.address)}
                         target="_blank"
                         rel="noreferrer"
                       >
@@ -465,17 +499,21 @@ export default function SchedulePage() {
                   {participants.map((participant, index) => (
                     <motion.div
                       className="insight-row"
-                      key={participant.id}
+                      key={participant.userId}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.2, delay: index * 0.03 }}
                     >
                       <div>
                         <strong>{participant.name}</strong>
-                        <span>{participant.role}</span>
+                        <span>
+                          {participant.role === "ADMIN" ? "Admin" : "Tag"}
+                        </span>
                       </div>
 
-                      <div className="insight-row__meta">{participantTaskCounts[participant.id] || 0} feladat</div>
+                      <div className="insight-row__meta">
+                        {participantTaskCounts[participant.userId] || 0} feladat
+                      </div>
                     </motion.div>
                   ))}
                 </div>
@@ -496,79 +534,68 @@ export default function SchedulePage() {
                   animate="animate"
                   exit="exit"
                 >
-                  {tasks.map((task, index) => {
-                    const isOpen = selectedTaskId === task.id;
+                  {tasks.length === 0 ? (
+                    <div className="task-table-card">
+                      <p>Még nincs feladat ebben a beosztásban.</p>
+                    </div>
+                  ) : (
+                    tasks.map((task, index) => {
+                      const isOpen = selectedTaskId === task.id;
 
-                    return (
-                      <motion.div
-                        key={task.id}
-                        className={isOpen ? `task-block open ${task.color}` : `task-block ${task.color}`}
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.24, delay: index * 0.04 }}
-                        layout
-                      >
-                        <motion.button
-                          className={isOpen ? `task-card active ${task.color}` : `task-card ${task.color}`}
-                          onClick={() => setSelectedTaskId(isOpen ? null : task.id)}
-                          whileHover={{ y: -2 }}
-                          whileTap={{ scale: 0.992 }}
+                      return (
+                        <motion.div
+                          key={task.id}
+                          className={
+                            isOpen
+                              ? `task-block open ${task.color}`
+                              : `task-block ${task.color}`
+                          }
+                          initial={{ opacity: 0, y: 12 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.24, delay: index * 0.04 }}
                           layout
                         >
-                          <div className="task-card__time">
-                            <span>{task.start}</span>
-                            <span>{task.end}</span>
-                          </div>
-
-                          <div className="task-card__main">
-                            <div className="task-card__top">
-                              <p>{task.category}</p>
-                              <span>{task.location}</span>
+                          <motion.button
+                            type="button"
+                            className={
+                              isOpen
+                                ? `task-card active ${task.color}`
+                                : `task-card ${task.color}`
+                            }
+                            onClick={() => openTaskDetails(task.id)}
+                            whileHover={{ y: -2 }}
+                            whileTap={{ scale: 0.992 }}
+                            layout
+                          >
+                            <div className="task-card__time">
+                              <span>{task.start}</span>
+                              <span>{task.end}</span>
                             </div>
 
-                            <h3>{task.title}</h3>
+                            <div className="task-card__main">
+                              <div className="task-card__top">
+                                <p>{task.category}</p>
+                                <span>{task.location}</span>
+                              </div>
 
-                            <div className="task-card__people">
-                              {task.assignees.map((assigneeId) => (
-                                <div key={assigneeId} className="person-pill">
-                                  {participantMap[assigneeId]?.name}
+                              <h3>{task.title}</h3>
+
+                              {task.assignees.length > 0 && (
+                                <div className="task-card__people">
+                                  {task.assignees.map((assigneeId) => (
+                                    <div key={assigneeId} className="person-pill">
+                                      {participantMap[assigneeId]?.name ||
+                                        "Ismeretlen"}
+                                    </div>
+                                  ))}
                                 </div>
-                              ))}
+                              )}
                             </div>
-                          </div>
-                        </motion.button>
-
-                        <AnimatePresence initial={false}>
-                          {isOpen && (
-                            <motion.div
-                              className={`task-inline-detail ${task.color}`}
-                              initial={{ opacity: 0, height: 0, y: -6 }}
-                              animate={{ opacity: 1, height: "auto", y: 0 }}
-                              exit={{ opacity: 0, height: 0, y: -4 }}
-                              transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-                            >
-                              <motion.div
-                                className="task-inline-detail__inner"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                transition={{ duration: 0.16, delay: 0.04 }}
-                              >
-                                <TaskDetails
-                                  task={task}
-                                  participantMap={participantMap}
-                                  getMapsUrl={getMapsUrl}
-                                  isAdmin={isAdmin}
-                                  onEdit={() => openEditTaskModal(task)}
-                                  onDelete={() => handleDeleteTask(task.id)}
-                                />
-                              </motion.div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </motion.div>
-                    );
-                  })}
+                          </motion.button>
+                        </motion.div>
+                      );
+                    })
+                  )}
                 </motion.div>
               ) : (
                 <motion.div
@@ -583,32 +610,42 @@ export default function SchedulePage() {
                     <span>Idő</span>
                     <span>Feladat</span>
                     <span>Helyszín</span>
-                    <span>Felelősök</span>
+                    <span>Felelős</span>
                   </div>
 
-                  {tasks.map((task, index) => (
-                    <motion.button
-                      key={task.id}
-                      className="task-table-row"
-                      onClick={() => setSelectedTaskId(task.id)}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.2, delay: index * 0.03 }}
-                      whileHover={{ backgroundColor: "rgba(9, 15, 13, 0.28)" }}
-                      whileTap={{ scale: 0.996 }}
-                    >
-                      <span>
-                        {task.start}–{task.end}
-                      </span>
-                      <span>{task.title}</span>
-                      <span>{task.location}</span>
-                      <span>
-                        {task.assignees
-                          .map((assigneeId) => participantMap[assigneeId]?.name)
-                          .join(", ")}
-                      </span>
-                    </motion.button>
-                  ))}
+                  {tasks.length === 0 ? (
+                    <p>Még nincs blokk.</p>
+                  ) : (
+                    tasks.map((task, index) => (
+                      <motion.button
+                        type="button"
+                        key={task.id}
+                        className="task-table-row"
+                        onClick={() => openTaskDetails(task.id)}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2, delay: index * 0.03 }}
+                        whileTap={{ scale: 0.996 }}
+                      >
+                        <span>
+                          {task.start}–{task.end}
+                        </span>
+                        <span>{task.title}</span>
+                        <span>{task.location}</span>
+                        <span>
+                          {task.assignees.length > 0
+                            ? task.assignees
+                                .map(
+                                  (assigneeId) =>
+                                    participantMap[assigneeId]?.name ||
+                                    "Ismeretlen"
+                                )
+                                .join(", ")
+                            : "Nincs felelős"}
+                        </span>
+                      </motion.button>
+                    ))
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -636,6 +673,8 @@ export default function SchedulePage() {
                     getMapsUrl={getMapsUrl}
                     isAdmin={isAdmin}
                     onEdit={() => openEditTaskModal(selectedTask)}
+                    onComplete={() => handleCompleteTask(selectedTask.id)}
+                    onReopen={() => handleReopenTask(selectedTask.id)}
                     onDelete={() => handleDeleteTask(selectedTask.id)}
                   />
                 </motion.div>
@@ -645,9 +684,61 @@ export default function SchedulePage() {
         </motion.section>
 
         <AnimatePresence>
+          {showMobileDetail && selectedTask && (
+            <>
+              <motion.button
+                type="button"
+                className="schedule-modal-backdrop mobile-detail-backdrop"
+                onClick={() => setShowMobileDetail(false)}
+                aria-label="Bezárás"
+                variants={backdropFade}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              />
+
+              <motion.div
+                className={`schedule-modal mobile-task-detail ${selectedTask.color}`}
+                variants={popIn}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              >
+                <div className="schedule-modal__head">
+                  <p>{selectedTask.category}</p>
+                  <h3>{selectedTask.title}</h3>
+                </div>
+
+                <TaskDetails
+                  task={selectedTask}
+                  participantMap={participantMap}
+                  getMapsUrl={getMapsUrl}
+                  isAdmin={isAdmin}
+                  onEdit={() => openEditTaskModal(selectedTask)}
+                  onComplete={() => handleCompleteTask(selectedTask.id)}
+                  onReopen={() => handleReopenTask(selectedTask.id)}
+                  onDelete={() => handleDeleteTask(selectedTask.id)}
+                />
+
+                <div className="schedule-modal__actions">
+                  <button
+                    type="button"
+                    className="secondary-modal-button"
+                    onClick={() => setShowMobileDetail(false)}
+                  >
+                    Bezárás
+                  </button>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
           {showTaskModal && isAdmin && (
             <>
               <motion.button
+                type="button"
                 className="schedule-modal-backdrop"
                 onClick={closeTaskModal}
                 aria-label="Bezárás"
@@ -665,8 +756,12 @@ export default function SchedulePage() {
                 exit="exit"
               >
                 <div className="schedule-modal__head">
-                  <p>{editingTaskId ? "Blokk szerkesztése" : "Új beosztás blokk"}</p>
-                  <h3>{editingTaskId ? "Feladat módosítása" : "Gyors létrehozás"}</h3>
+                  <p>
+                    {editingTaskId ? "Blokk szerkesztése" : "Új beosztás blokk"}
+                  </p>
+                  <h3>
+                    {editingTaskId ? "Feladat módosítása" : "Feladat létrehozása"}
+                  </h3>
                 </div>
 
                 <form className="schedule-modal__form" onSubmit={handleTaskSubmit}>
@@ -676,12 +771,14 @@ export default function SchedulePage() {
                     value={taskForm.title}
                     onChange={(e) => updateTaskForm("title", e.target.value)}
                   />
+
                   <input
                     type="text"
                     placeholder="Kategória pl. Program"
                     value={taskForm.category}
                     onChange={(e) => updateTaskForm("category", e.target.value)}
                   />
+
                   <div className="double-input-row">
                     <input
                       type="text"
@@ -696,18 +793,39 @@ export default function SchedulePage() {
                       onChange={(e) => updateTaskForm("end", e.target.value)}
                     />
                   </div>
+
                   <input
                     type="text"
-                    placeholder="Helyszín"
+                    placeholder="Helyszín pl. Aula"
                     value={taskForm.location}
                     onChange={(e) => updateTaskForm("location", e.target.value)}
                   />
+
                   <input
                     type="text"
-                    placeholder="Cím / Maps link"
+                    placeholder="Google Maps cím pl. Kecskemét, Izsáki út 10"
                     value={taskForm.address}
                     onChange={(e) => updateTaskForm("address", e.target.value)}
                   />
+
+                  <div className="task-form-section">
+                    <p>Felelős kiválasztása</p>
+
+                    <select
+                      value={taskForm.assignedTo}
+                      onChange={(e) => updateTaskForm("assignedTo", e.target.value)}
+                    >
+                      <option value="">Nincs felelős</option>
+
+                      {participants.map((participant) => (
+                        <option key={participant.userId} value={participant.userId}>
+                          {participant.name} -{" "}
+                          {participant.role === "ADMIN" ? "Admin" : "Tag"}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
                   <textarea
                     placeholder="Rövid leírás"
                     rows="4"
@@ -716,27 +834,8 @@ export default function SchedulePage() {
                   />
 
                   <div className="task-form-section">
-                    <p>Hozzárendelt emberek</p>
-                    <div className="task-form-assignees">
-                      {participants.map((participant) => (
-                        <button
-                          key={participant.id}
-                          type="button"
-                          className={
-                            taskForm.assignees.includes(participant.id)
-                              ? "task-form-assignee selected"
-                              : "task-form-assignee"
-                          }
-                          onClick={() => toggleAssignee(participant.id)}
-                        >
-                          {participant.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="task-form-section">
                     <p>Szín</p>
+
                     <select
                       value={taskForm.color}
                       onChange={(e) => updateTaskForm("color", e.target.value)}
@@ -754,12 +853,23 @@ export default function SchedulePage() {
                       type="button"
                       className="secondary-modal-button"
                       onClick={closeTaskModal}
+                      disabled={actionLoading}
                       whileTap={{ scale: 0.985 }}
                     >
                       Mégse
                     </motion.button>
-                    <motion.button type="submit" className="primary-modal-button" whileTap={{ scale: 0.985 }}>
-                      {editingTaskId ? "Mentés" : "Létrehozás"}
+
+                    <motion.button
+                      type="submit"
+                      className="primary-modal-button"
+                      disabled={actionLoading}
+                      whileTap={{ scale: 0.985 }}
+                    >
+                      {actionLoading
+                        ? "Mentés..."
+                        : editingTaskId
+                        ? "Mentés"
+                        : "Létrehozás"}
                     </motion.button>
                   </div>
                 </form>
@@ -772,7 +882,16 @@ export default function SchedulePage() {
   );
 }
 
-function TaskDetails({ task, participantMap, getMapsUrl, isAdmin, onEdit, onDelete }) {
+function TaskDetails({
+  task,
+  participantMap,
+  getMapsUrl,
+  isAdmin,
+  onEdit,
+  onComplete,
+  onReopen,
+  onDelete,
+}) {
   return (
     <>
       <div className="task-detail-meta">
@@ -792,6 +911,11 @@ function TaskDetails({ task, participantMap, getMapsUrl, isAdmin, onEdit, onDele
           <span>Cím</span>
           <strong>{task.address}</strong>
         </div>
+
+        <div className="detail-row">
+          <span>Státusz</span>
+          <strong>{task.status === "DONE" ? "Kész" : "Nyitott"}</strong>
+        </div>
       </div>
 
       <div className="task-detail-description">
@@ -799,21 +923,24 @@ function TaskDetails({ task, participantMap, getMapsUrl, isAdmin, onEdit, onDele
         <div>{task.description}</div>
       </div>
 
-      <div className="task-detail-assignees">
-        <p>Hozzárendelt emberek</p>
-        <div className="detail-assignee-list">
-          {task.assignees.map((assigneeId) => (
-            <div key={assigneeId} className="detail-assignee-pill">
-              {participantMap[assigneeId]?.name}
-            </div>
-          ))}
+      {task.assignees.length > 0 && (
+        <div className="task-detail-assignees">
+          <p>Felelős</p>
+
+          <div className="detail-assignee-list">
+            {task.assignees.map((assigneeId) => (
+              <div key={assigneeId} className="detail-assignee-pill">
+                {participantMap[assigneeId]?.name || "Ismeretlen"}
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="task-detail-actions">
         <a
           className="ghost-link-button"
-          href={getMapsUrl(task.address)}
+          href={getMapsUrl(task)}
           target="_blank"
           rel="noreferrer"
         >
@@ -821,14 +948,47 @@ function TaskDetails({ task, participantMap, getMapsUrl, isAdmin, onEdit, onDele
         </a>
 
         {isAdmin && (
-          <>
-            <motion.button className="primary-action-button" onClick={onEdit} whileTap={{ scale: 0.97 }}>
-              Szerkesztés
-            </motion.button>
-            <motion.button className="danger-action-button" onClick={onDelete} whileTap={{ scale: 0.97 }}>
-              Törlés
-            </motion.button>
-          </>
+          <motion.button
+            type="button"
+            className="primary-action-button"
+            onClick={onEdit}
+            whileTap={{ scale: 0.97 }}
+          >
+            Szerkesztés
+          </motion.button>
+        )}
+
+        {isAdmin && task.status !== "DONE" && (
+          <motion.button
+            type="button"
+            className="primary-action-button"
+            onClick={onComplete}
+            whileTap={{ scale: 0.97 }}
+          >
+            Készre állít
+          </motion.button>
+        )}
+
+        {isAdmin && task.status === "DONE" && (
+          <motion.button
+            type="button"
+            className="primary-action-button"
+            onClick={onReopen}
+            whileTap={{ scale: 0.97 }}
+          >
+            Visszanyitás
+          </motion.button>
+        )}
+
+        {isAdmin && (
+          <motion.button
+            type="button"
+            className="danger-action-button"
+            onClick={onDelete}
+            whileTap={{ scale: 0.97 }}
+          >
+            Törlés
+          </motion.button>
         )}
       </div>
     </>

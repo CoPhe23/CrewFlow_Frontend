@@ -1,162 +1,338 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import "../styles/EventPage.css";
-import { backdropFade, fadeUp, pageMotion, popIn, tabPanel } from "../lib/motion";
+import { apiRequest } from "../lib/api";
+import {
+  backdropFade,
+  fadeUp,
+  pageMotion,
+  popIn,
+  tabPanel,
+} from "../lib/motion";
 
-const CURRENT_USER_ID = 1;
+function formatDateTime(value) {
+  if (!value) return "";
+  return new Date(value).toLocaleString("hu-HU", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function getCurrentUser() {
+  try {
+    return (
+      JSON.parse(localStorage.getItem("user")) ||
+      JSON.parse(sessionStorage.getItem("user"))
+    );
+  } catch {
+    return null;
+  }
+}
 
 export default function EventPage() {
   const navigate = useNavigate();
+  const { id } = useParams();
+
   const [activeTab, setActiveTab] = useState("wall");
   const [menuOpen, setMenuOpen] = useState(false);
   const [modalType, setModalType] = useState("");
-  const [eventName, setEventName] = useState("Tavaszi Iskolabál");
-  const [eventDescription, setEventDescription] = useState(
-    "Az esemény fő szervezői felülete. Itt jelennek meg a fontos információk, a kiemelt beosztás, valamint a csapat kommunikációja."
-  );
-  const [editedName, setEditedName] = useState(eventName);
+
+  const [event, setEvent] = useState(null);
+  const [editedName, setEditedName] = useState("");
+  const [editedDescription, setEditedDescription] = useState("");
   const [newPostText, setNewPostText] = useState("");
 
-  const [participants, setParticipants] = useState([
-    {
-      id: 1,
-      name: "Máté Bárdos",
-      role: "Admin",
-    },
-    {
-      id: 2,
-      name: "Anna Kovács",
-      role: "Admin",
-    },
-    {
-      id: 3,
-      name: "Bence Tóth",
-      role: "Tag",
-    },
-    {
-      id: 4,
-      name: "Lili Nagy",
-      role: "Tag",
-    },
-  ]);
+  const [posts, setPosts] = useState([]);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatText, setChatText] = useState("");
+  const [participants, setParticipants] = useState([]);
 
-  const [posts, setPosts] = useState([
-    {
-      id: 1,
-      author: "Anna Kovács",
-      role: "Admin",
-      time: "Ma, 14:22",
-      text: "Holnap 17:00-kor rövid megbeszélést tartunk az aula előtt. Kérlek mindenki legyen pontos.",
-    },
-    {
-      id: 2,
-      author: "Máté Bárdos",
-      role: "Admin",
-      time: "Ma, 11:08",
-      text: "A dekoros csapat listája frissítve lett, este még felkerül a végleges beosztás is.",
-    },
-  ]);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const currentUser = useMemo(() => {
-    return participants.find((participant) => participant.id === CURRENT_USER_ID);
-  }, [participants]);
+  const isAdmin = event?.role === "ADMIN";
 
-  const isAdmin = currentUser?.role === "Admin";
+  useEffect(() => {
+  let alive = true;
+  let interval = null;
 
-  const event = {
-    id: 1,
-    name: eventName,
-    description: eventDescription,
-    role: isAdmin ? "Admin" : "Résztvevő",
-    participantCount: participants.length,
-    canManage: isAdmin,
+  async function initEventPage() {
+    try {
+      const eventRes = await apiRequest(`/events/${id}`, "GET");
+      const membersRes = await apiRequest(`/events/${id}/members`, "GET");
+
+      if (!alive) return;
+
+      setEvent({
+        id: eventRes.id,
+        name: eventRes.name,
+        description: eventRes.description || "",
+        joinCode: eventRes.joinCode,
+        role: eventRes.role,
+        membersCount: eventRes.membersCount,
+        canManage: eventRes.role === "ADMIN",
+      });
+
+      setEditedName(eventRes.name);
+      setEditedDescription(eventRes.description || "");
+      setParticipants(membersRes.members || []);
+
+      await loadPosts();
+      await loadMessages(membersRes.members || []);
+
+      interval = setInterval(() => {
+        loadMessages(membersRes.members || []);
+      }, 5000);
+    } catch (err) {
+      setError(err.message || "Nem sikerült betölteni az eseményt.");
+      setEvent(null);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  initEventPage();
+
+  return () => {
+    alive = false;
+    if (interval) clearInterval(interval);
   };
+}, [id]);
 
-  const chatMessages = [
-    {
-      id: 1,
-      author: "Bence",
-      time: "14:31",
-      text: "Valaki hoz hosszabbítót?",
-      own: false,
-    },
-    {
-      id: 2,
-      author: "Te",
-      time: "14:33",
-      text: "Igen, én tudok vinni egyet.",
-      own: true,
-    },
-    {
-      id: 3,
-      author: "Anna",
-      time: "14:35",
-      text: "Szuper, akkor az le is van tudva.",
-      own: false,
-    },
-  ];
+  async function loadEvent() {
+    try {
+      setLoading(true);
+      setError("");
+
+      const data = await apiRequest(`/events/${id}`, "GET");
+
+      const loadedEvent = {
+        id: data.id,
+        name: data.name,
+        description: data.description || "",
+        joinCode: data.joinCode,
+        role: data.role,
+        membersCount: data.membersCount,
+        canManage: data.role === "ADMIN",
+      };
+
+      setEvent(loadedEvent);
+      setEditedName(loadedEvent.name);
+      setEditedDescription(loadedEvent.description);
+    } catch (err) {
+      setError(err.message || "Betöltési hiba.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadMessages(memberList = participants) {
+  try {
+    const data = await apiRequest(`/messages/events/${id}/messages`, "GET");
+    const user = getCurrentUser();
+
+    setChatMessages(
+      (data || []).map((msg) => {
+        const sender = memberList.find((p) => p.userId === msg.userId);
+
+        const roleLabel =
+          sender?.role === "ADMIN"
+            ? "Admin"
+            : "Tag";
+
+        return {
+          id: msg.id,
+          author: msg.userId === user?.id ? `Te • ${roleLabel}` : roleLabel,
+          time: formatDateTime(msg.createdAt),
+          text: msg.text,
+          own: msg.userId === user?.id,
+        };
+      })
+    );
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+  async function loadMembers() {
+    try {
+      const data = await apiRequest(`/events/${id}/members`, "GET");
+      setParticipants(data.members || []);
+    } catch (err) {
+      setError(err.message || "Nem sikerült betölteni a résztvevőket.");
+    }
+  }
+
+  async function loadPosts() {
+    try {
+      const data = await apiRequest(`/posts/events/${id}/posts`, "GET");
+
+      setPosts(
+        (data.posts || []).map((post) => ({
+          id: post.id,
+          author: post.authorName || "Admin",
+          role: post.role || "ADMIN",
+          time: formatDateTime(post.createdAt),
+          text: post.text,
+        }))
+      );
+    } catch (err) {
+      setError(err.message || "Nem sikerült betölteni a posztokat.");
+    }
+  }
+
+  async function handleSendMessage(e) {
+    e.preventDefault();
+
+    if (!chatText.trim()) return;
+
+    try {
+      setError("");
+
+      await apiRequest("/messages", "POST", {
+        eventId: id,
+        text: chatText.trim(),
+      });
+
+      setChatText("");
+      await loadMessages();
+    } catch (err) {
+      setError(err.message || "Nem sikerült elküldeni az üzenetet.");
+    }
+  }
+
+  async function handlePromoteMember(userId) {
+    try {
+      setError("");
+
+      await apiRequest(`/events/${id}/members/${userId}/promote`, "PATCH");
+
+      await loadMembers();
+      await loadEvent();
+    } catch (err) {
+      setError(err.message || "Nem sikerült adminná tenni.");
+    }
+  }
+
+  async function handleRemoveMember(userId) {
+    try {
+      setError("");
+
+      await apiRequest(`/events/${id}/members/${userId}`, "DELETE");
+
+      await loadMembers();
+      await loadEvent();
+    } catch (err) {
+      setError(err.message || "Nem sikerült eltávolítani.");
+    }
+  }
 
   function closeModal() {
     setModalType("");
     setMenuOpen(false);
-    setEditedName(eventName);
+    setEditedName(event?.name || "");
+    setEditedDescription(event?.description || "");
+    setActionLoading(false);
   }
 
-  function handleRenameSubmit(e) {
+  async function handleRenameSubmit(e) {
     e.preventDefault();
-    if (!isAdmin || !editedName.trim()) return;
-    setEventName(editedName.trim());
-    closeModal();
+
+    if (!editedName.trim()) {
+      setError("Az esemény neve kötelező.");
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      setError("");
+
+      await apiRequest(`/events/${id}`, "PATCH", {
+        name: editedName.trim(),
+        description: editedDescription.trim(),
+      });
+
+      await loadEvent();
+      closeModal();
+    } catch (err) {
+      setError(err.message || "Nem sikerült szerkeszteni az eseményt.");
+    } finally {
+      setActionLoading(false);
+    }
   }
 
-  function handlePostSubmit(e) {
+  async function handlePostSubmit(e) {
     e.preventDefault();
-    if (!isAdmin || !newPostText.trim()) return;
 
-    setPosts((prevPosts) => [
-      {
-        id: Date.now(),
-        author: currentUser?.name || "Admin",
-        role: currentUser?.role || "Admin",
-        time: "Most",
+    if (!newPostText.trim()) return;
+
+    try {
+      setError("");
+
+      await apiRequest("/posts", "POST", {
+        eventId: id,
         text: newPostText.trim(),
-      },
-      ...prevPosts,
-    ]);
+      });
 
-    setNewPostText("");
+      setNewPostText("");
+      await loadPosts();
+    } catch (err) {
+      setError(err.message || "Nem sikerült posztolni.");
+    }
   }
 
-  function handleMakeAdmin(participantId) {
-    if (!isAdmin) return;
+  async function handleLeaveEvent() {
+    try {
+      setActionLoading(true);
+      setError("");
 
-    setParticipants((prevParticipants) =>
-      prevParticipants.map((participant) =>
-        participant.id === participantId ? { ...participant, role: "Admin" } : participant
-      )
+      await apiRequest(`/events/${id}/leave`, "DELETE");
+
+      navigate("/home");
+    } catch (err) {
+      setError(err.message || "Nem sikerült kilépni az eseményből.");
+      setActionLoading(false);
+    }
+  }
+
+  async function handleDeleteEvent() {
+    try {
+      setActionLoading(true);
+      setError("");
+
+      await apiRequest(`/events/${id}`, "DELETE");
+
+      navigate("/home");
+    } catch (err) {
+      setError(err.message || "Nem sikerült törölni az eseményt.");
+      setActionLoading(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <main className="event-page">
+        <div className="event-shell">
+          <h2>Betöltés...</h2>
+        </div>
+      </main>
     );
   }
 
-  function handleRemoveParticipant(participantId) {
-    if (!isAdmin || participantId === CURRENT_USER_ID) return;
-
-    setParticipants((prevParticipants) =>
-      prevParticipants.filter((participant) => participant.id !== participantId)
+  if (!event) {
+    return (
+      <main className="event-page">
+        <div className="event-shell">
+          <h2>Nem található esemény.</h2>
+          <Link to="/home">Vissza</Link>
+        </div>
+      </main>
     );
-  }
-
-  function handleDeleteEvent() {
-    if (!isAdmin) return;
-
-    console.log("Törlés backenddel később");
-    closeModal();
-    navigate("/home");
-  }
-
-  function handleLeaveEvent() {
-    console.log("Kilépés backenddel később");
-    closeModal();
   }
 
   return (
@@ -165,87 +341,88 @@ export default function EventPage() {
       variants={pageMotion}
       initial="initial"
       animate="animate"
-      exit="exit"
     >
       <motion.div className="event-shell" variants={fadeUp}>
-        <motion.header className="event-header" variants={fadeUp}>
+        <motion.header className="event-header">
           <div className="event-header__left">
-            <Link to="/home" className="event-back-button" aria-label="Vissza a főoldalra">
+            <Link to="/home" className="event-back-button">
               ←
             </Link>
 
             <div className="event-heading">
-              <p className="event-heading__eyebrow">{event.role}</p>
+              <p className="event-heading__eyebrow">
+                {isAdmin ? "Admin" : "Tag"}
+              </p>
               <h1>{event.name}</h1>
             </div>
           </div>
 
-          <div className="event-header__right">
-            <motion.button
-              className="event-menu-button"
-              onClick={() => setMenuOpen((prev) => !prev)}
-              aria-label="Esemény műveletek"
-              whileTap={{ scale: 0.96 }}
-            >
-              •••
-            </motion.button>
-          </div>
+          <motion.button
+            className="event-menu-button"
+            type="button"
+            onClick={() => setMenuOpen((v) => !v)}
+            whileTap={{ scale: 0.97 }}
+          >
+            •••
+          </motion.button>
         </motion.header>
 
-        <motion.section className="event-summary-card" variants={fadeUp}>
-          <div className="event-summary-card__top">
-            <motion.div
-              className="event-summary-icon"
-              animate={{ y: [0, -3, 0] }}
-              transition={{ duration: 4.6, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <span />
-              <span />
-              <span />
-            </motion.div>
+        {error && <div className="error">{error}</div>}
 
+        <motion.section className="event-summary-card">
+          <div className="event-summary-card__top">
             <div className="event-summary-meta">
-              <p>Esemény adatai</p>
+              <p>Esemény adatok</p>
               <h2>{event.name}</h2>
             </div>
           </div>
 
-          <p className="event-summary-description">{event.description}</p>
+          <p className="event-summary-description">
+            {event.description || "Nincs leírás."}
+          </p>
+
+          <p className="event-summary-description">
+            Kód: <strong>{event.joinCode}</strong>
+            <br />
+            Tagok: <strong>{participants.length || event.membersCount}</strong>
+          </p>
         </motion.section>
 
-        <motion.div className="event-tabs" variants={fadeUp}>
-          <motion.button
+        <div className="event-tabs">
+          <button
+            type="button"
             className={activeTab === "wall" ? "event-tab active" : "event-tab"}
             onClick={() => setActiveTab("wall")}
-            whileTap={{ scale: 0.97 }}
           >
             Fal
-          </motion.button>
+          </button>
 
-          <motion.button
+          <button
+            type="button"
             className={activeTab === "chat" ? "event-tab active" : "event-tab"}
             onClick={() => setActiveTab("chat")}
-            whileTap={{ scale: 0.97 }}
           >
             Chat
-          </motion.button>
+          </button>
 
-          <motion.button
-            className={activeTab === "participants" ? "event-tab active" : "event-tab"}
+          <button
+            type="button"
+            className={
+              activeTab === "participants" ? "event-tab active" : "event-tab"
+            }
             onClick={() => setActiveTab("participants")}
-            whileTap={{ scale: 0.97 }}
           >
             Résztvevők
-          </motion.button>
-        </motion.div>
+          </button>
+        </div>
 
         <AnimatePresence>
           {menuOpen && (
             <>
               <motion.button
                 className="event-dropdown-backdrop"
+                type="button"
                 onClick={() => setMenuOpen(false)}
-                aria-label="Bezárás"
                 variants={backdropFade}
                 initial="initial"
                 animate="animate"
@@ -259,39 +436,39 @@ export default function EventPage() {
                 animate="animate"
                 exit="exit"
               >
-                {event.canManage && (
-                  <motion.button
-                    whileTap={{ scale: 0.985 }}
+                {isAdmin && (
+                  <button
+                    type="button"
                     onClick={() => {
                       setModalType("rename");
                       setMenuOpen(false);
                     }}
                   >
-                    Esemény nevének szerkesztése
-                  </motion.button>
+                    Esemény szerkesztés
+                  </button>
                 )}
 
-                <motion.button
-                  whileTap={{ scale: 0.985 }}
+                <button
+                  type="button"
                   onClick={() => {
                     setModalType("leave");
                     setMenuOpen(false);
                   }}
                 >
-                  Kilépés az eseményből
-                </motion.button>
+                  Kilépés
+                </button>
 
-                {event.canManage && (
-                  <motion.button
+                {isAdmin && (
+                  <button
+                    type="button"
                     className="danger-option"
-                    whileTap={{ scale: 0.985 }}
                     onClick={() => {
                       setModalType("delete");
                       setMenuOpen(false);
                     }}
                   >
-                    Esemény törlése
-                  </motion.button>
+                    Törlés
+                  </button>
                 )}
               </motion.div>
             </>
@@ -308,103 +485,51 @@ export default function EventPage() {
               animate="animate"
               exit="exit"
             >
-              <motion.div whileHover={{ y: -3, scale: 1.008 }} whileTap={{ scale: 0.992 }}>
-                <Link to={`/event/${event.id}/schedule`} className="pinned-schedule-card">
-                  <div className="pinned-schedule-card__top">
-                    <div className="pinned-schedule-icon">
-                      <div className="schedule-mini-graphic">
-                        <span />
-                        <span />
-                        <span />
-                      </div>
-                    </div>
-
-                    <div>
-                      <p>Pinelt</p>
-                      <h2>Beosztás</h2>
-                    </div>
-                  </div>
-
-                  <div className="schedule-hero">
-                    <div className="schedule-hero__grid">
-                      <div className="schedule-chip">Beléptetés</div>
-                      <div className="schedule-chip">Pakolás</div>
-                      <div className="schedule-chip">Dekor</div>
-                      <div className="schedule-chip">Zene</div>
-                    </div>
-
-                    <div className="schedule-hero__lines">
-                      <span />
-                      <span />
-                      <span />
-                    </div>
-                  </div>
-
-                  <div className="pinned-schedule-card__footer">
-                    <span>Megnyitás</span>
-                    <span>→</span>
-                  </div>
-                </Link>
-              </motion.div>
+              <Link
+                to={`/event/${event.id}/schedule`}
+                className="pinned-schedule-card"
+              >
+                <h2>Beosztás</h2>
+                <span>Megnyitás →</span>
+              </Link>
 
               {isAdmin && (
-                <motion.form
-                  className="post-composer-card"
-                  onSubmit={handlePostSubmit}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.24 }}
-                >
-                  <div className="post-composer-card__head">
-                    <div>
-                      <p>Admin poszt</p>
-                      <h3>Új bejegyzés a falra</h3>
-                    </div>
-                    <span>Csak adminoknak</span>
-                  </div>
+                <form className="post-composer-card" onSubmit={handlePostSubmit}>
+                  <h3>Új admin poszt</h3>
 
                   <textarea
+                    rows="4"
                     value={newPostText}
                     onChange={(e) => setNewPostText(e.target.value)}
-                    placeholder="Írj ki egy fontos infót az esemény falára..."
-                    rows="4"
+                    placeholder="Írj ki valamit..."
                   />
 
-                  <div className="post-composer-card__actions">
-                    <motion.button type="submit" className="primary-button" whileTap={{ scale: 0.985 }}>
-                      Posztolás
-                    </motion.button>
-                  </div>
-                </motion.form>
+                  <button className="primary-button" type="submit">
+                    Posztolás
+                  </button>
+                </form>
               )}
 
               <div className="post-list">
-                {posts.map((post, index) => (
-                  <motion.article
-                    className="post-card"
-                    key={post.id}
-                    initial={{ opacity: 0, y: 14 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{
-                      duration: 0.28,
-                      delay: 0.04 + index * 0.06,
-                      ease: [0.22, 1, 0.36, 1],
-                    }}
-                  >
-                    <div className="post-card__top">
-                      <div>
-                        <h3>{post.author}</h3>
-                        <p>{post.role}</p>
+                {posts.length === 0 ? (
+                  <div className="post-card">
+                    <p>Még nincs bejegyzés.</p>
+                  </div>
+                ) : (
+                  posts.map((post) => (
+                    <div key={post.id} className="post-card">
+                      <div className="post-card__top">
+                        <div>
+                          <h3>{post.author}</h3>
+                          <p>{post.role}</p>
+                        </div>
+                        <span>{post.time}</span>
                       </div>
 
-                      <span>{post.time}</span>
-                    </div>
-
-                    <div className="post-card__body">
                       <p>{post.text}</p>
                     </div>
-                  </motion.article>
-                ))}
+                  ))
+                )}
               </div>
             </motion.section>
           )}
@@ -419,29 +544,35 @@ export default function EventPage() {
               exit="exit"
             >
               <div className="chat-messages">
-                {chatMessages.map((message, index) => (
-                  <motion.div
-                    key={message.id}
-                    className={message.own ? "chat-bubble own" : "chat-bubble"}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.22, delay: index * 0.04 }}
-                  >
-                    <div className="chat-bubble__meta">
-                      <span>{message.author}</span>
-                      <span>{message.time}</span>
-                    </div>
+                {chatMessages.length === 0 ? (
+                  <div className="chat-bubble">
+                    <p>Még nincs üzenet.</p>
+                  </div>
+                ) : (
+                  chatMessages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={message.own ? "chat-bubble own" : "chat-bubble"}
+                    >
+                      <div className="chat-bubble__meta">
+                        <span>{message.author}</span>
+                        <span>{message.time}</span>
+                      </div>
 
-                    <p>{message.text}</p>
-                  </motion.div>
-                ))}
+                      <p>{message.text}</p>
+                    </div>
+                  ))
+                )}
               </div>
 
-              <form className="chat-input-bar">
-                <input type="text" placeholder="Üzenet írása..." />
-                <motion.button type="submit" whileTap={{ scale: 0.97 }}>
-                  Küldés
-                </motion.button>
+              <form className="chat-input-bar" onSubmit={handleSendMessage}>
+                <input
+                  value={chatText}
+                  onChange={(e) => setChatText(e.target.value)}
+                  placeholder="Üzenet írása..."
+                />
+
+                <button type="submit">Küldés</button>
               </form>
             </motion.section>
           )}
@@ -456,65 +587,62 @@ export default function EventPage() {
               exit="exit"
             >
               <div className="participants-header-card">
-                <div>
-                  <p>Tagok</p>
-                  <h2>Résztvevők</h2>
-                </div>
+                <h2>Résztvevők</h2>
 
-                <div className="participants-count">{event.participantCount} fő</div>
+                <div className="participants-count">
+                  {participants.length || event.membersCount} fő
+                </div>
               </div>
 
               <div className="participants-list">
-                {participants.map((participant, index) => {
-                  const isCurrentUser = participant.id === CURRENT_USER_ID;
-                  const participantIsAdmin = participant.role === "Admin";
-
-                  return (
-                    <motion.article
-                      className="participant-card"
-                      key={participant.id}
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.24, delay: index * 0.04 }}
-                    >
-                      <div className="participant-avatar">{participant.name.slice(0, 1)}</div>
+                {participants.length === 0 ? (
+                  <div className="participant-card">
+                    <h3>Nincs betöltött résztvevő</h3>
+                    <p>Próbáld újratölteni az oldalt.</p>
+                  </div>
+                ) : (
+                  participants.map((participant) => (
+                    <div className="participant-card" key={participant.userId}>
+                      <div className="participant-avatar">
+                        {participant.name?.slice(0, 1).toUpperCase() || "?"}
+                      </div>
 
                       <div className="participant-main">
                         <div className="participant-title-row">
                           <h3>{participant.name}</h3>
-                          {isCurrentUser && <span className="self-badge">Te</span>}
+                          {participant.isMe && <span className="self-badge">Te</span>}
                         </div>
-                        <p>{participant.role}</p>
+
+                        <p>
+                          {participant.role === "ADMIN" ? "Admin" : "Tag"}
+                          {participant.email ? ` • ${participant.email}` : ""}
+                        </p>
                       </div>
 
-                      {isAdmin && (
+                      {isAdmin && !participant.isMe && (
                         <div className="participant-actions">
-                          {!participantIsAdmin && (
-                            <motion.button
+                          {participant.role !== "ADMIN" && (
+                            <button
                               type="button"
                               className="participant-action-button"
-                              onClick={() => handleMakeAdmin(participant.id)}
-                              whileTap={{ scale: 0.985 }}
+                              onClick={() => handlePromoteMember(participant.userId)}
                             >
                               Adminná tesz
-                            </motion.button>
+                            </button>
                           )}
 
-                          {!isCurrentUser && (
-                            <motion.button
-                              type="button"
-                              className="participant-action-button participant-action-button--danger"
-                              onClick={() => handleRemoveParticipant(participant.id)}
-                              whileTap={{ scale: 0.985 }}
-                            >
-                              Eltávolít
-                            </motion.button>
-                          )}
+                          <button
+                            type="button"
+                            className="participant-action-button participant-action-button--danger"
+                            onClick={() => handleRemoveMember(participant.userId)}
+                          >
+                            Eltávolít
+                          </button>
                         </div>
                       )}
-                    </motion.article>
-                  );
-                })}
+                    </div>
+                  ))
+                )}
               </div>
             </motion.section>
           )}
@@ -525,8 +653,8 @@ export default function EventPage() {
             <>
               <motion.button
                 className="modal-backdrop"
+                type="button"
                 onClick={closeModal}
-                aria-label="Bezárás"
                 variants={backdropFade}
                 initial="initial"
                 animate="animate"
@@ -541,102 +669,94 @@ export default function EventPage() {
                 exit="exit"
               >
                 {modalType === "rename" && (
-                  <>
-                    <div className="modal-head">
-                      <p>Szerkesztés</p>
-                      <h3>Esemény átnevezése</h3>
+                  <form onSubmit={handleRenameSubmit} className="modal-form">
+                    <h3>Esemény szerkesztése</h3>
+
+                    <input
+                      value={editedName}
+                      onChange={(e) => setEditedName(e.target.value)}
+                      placeholder="Esemény neve"
+                    />
+
+                    <textarea
+                      rows="4"
+                      value={editedDescription}
+                      onChange={(e) => setEditedDescription(e.target.value)}
+                      placeholder="Esemény leírása"
+                    />
+
+                    <div className="modal-actions">
+                      <button
+                        className="ghost-button"
+                        type="button"
+                        onClick={closeModal}
+                        disabled={actionLoading}
+                      >
+                        Mégse
+                      </button>
+
+                      <button className="primary-button" disabled={actionLoading}>
+                        {actionLoading ? "Mentés..." : "Mentés"}
+                      </button>
                     </div>
-
-                    <form onSubmit={handleRenameSubmit} className="modal-form">
-                      <input
-                        type="text"
-                        value={editedName}
-                        onChange={(e) => setEditedName(e.target.value)}
-                        placeholder="Új eseménynév"
-                        maxLength={60}
-                      />
-
-                      <div className="modal-actions">
-                        <motion.button
-                          type="button"
-                          className="ghost-button"
-                          onClick={closeModal}
-                          whileTap={{ scale: 0.985 }}
-                        >
-                          Mégse
-                        </motion.button>
-                        <motion.button
-                          type="submit"
-                          className="primary-button"
-                          whileTap={{ scale: 0.985 }}
-                        >
-                          Mentés
-                        </motion.button>
-                      </div>
-                    </form>
-                  </>
+                  </form>
                 )}
 
                 {modalType === "leave" && (
                   <>
-                    <div className="modal-head">
-                      <p>Kilépés</p>
-                      <h3>Biztosan kilépsz ebből az eseményből?</h3>
-                    </div>
-
-                    <p className="modal-text-block">
-                      A későbbiekben csak új meghívókóddal tudsz majd visszacsatlakozni.
+                    <h3>Biztos kilépsz?</h3>
+                    <p className="event-summary-description">
+                      Kilépés után nem fogod látni ezt az eseményt.
                     </p>
 
                     <div className="modal-actions">
-                      <motion.button
-                        type="button"
+                      <button
                         className="ghost-button"
+                        type="button"
                         onClick={closeModal}
-                        whileTap={{ scale: 0.985 }}
+                        disabled={actionLoading}
                       >
                         Mégse
-                      </motion.button>
-                      <motion.button
-                        type="button"
+                      </button>
+
+                      <button
                         className="danger-button"
+                        type="button"
                         onClick={handleLeaveEvent}
-                        whileTap={{ scale: 0.985 }}
+                        disabled={actionLoading}
                       >
-                        Kilépés
-                      </motion.button>
+                        {actionLoading ? "Kilépés..." : "Kilépés"}
+                      </button>
                     </div>
                   </>
                 )}
 
-                {isAdmin && modalType === "delete" && (
+                {modalType === "delete" && (
                   <>
-                    <div className="modal-head">
-                      <p>Törlés</p>
-                      <h3>Biztosan törölni szeretnéd az eseményt?</h3>
-                    </div>
-
-                    <p className="modal-text-block">
-                      Ez a művelet később backend oldalon végleges törléshez fog kapcsolódni.
+                    <h3>Biztos törlöd?</h3>
+                    <p className="event-summary-description">
+                      Ez törli az eseményt, a tagokat, a posztokat, az üzeneteket
+                      és a beosztás blokkokat is.
                     </p>
 
                     <div className="modal-actions">
-                      <motion.button
-                        type="button"
+                      <button
                         className="ghost-button"
+                        type="button"
                         onClick={closeModal}
-                        whileTap={{ scale: 0.985 }}
+                        disabled={actionLoading}
                       >
                         Mégse
-                      </motion.button>
-                      <motion.button
-                        type="button"
+                      </button>
+
+                      <button
                         className="danger-button"
+                        type="button"
                         onClick={handleDeleteEvent}
-                        whileTap={{ scale: 0.985 }}
+                        disabled={actionLoading}
                       >
-                        Törlés
-                      </motion.button>
+                        {actionLoading ? "Törlés..." : "Törlés"}
+                      </button>
                     </div>
                   </>
                 )}

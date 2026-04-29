@@ -1,48 +1,47 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "../styles/home.css";
+import { apiRequest } from "../lib/api";
 import { backdropFade, fadeUp, pageMotion, popIn } from "../lib/motion";
 
 export default function Home() {
-  const [events, setEvents] = useState([
-    {
-      id: 1,
-      title: "Tavaszi Iskolabál",
-      code: "Q7M4X2",
-      members: 18,
-      role: "Szervező",
-      iconType: "spark",
-    },
-    {
-      id: 2,
-      title: "DÖK Gyűlés",
-      code: "R9K2P1",
-      members: 9,
-      role: "Tag",
-      iconType: "grid",
-    },
-    {
-      id: 3,
-      title: "Aftermovie Forgatás",
-      code: "F8N2L4",
-      members: 6,
-      role: "Admin",
-      iconType: "pulse",
-    },
-  ]);
+  const navigate = useNavigate();
 
+  const [events, setEvents] = useState([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [modalType, setModalType] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [eventName, setEventName] = useState("");
 
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
   const hasEvents = events.length > 0;
 
   const titleText = useMemo(() => {
+    if (loading) return "Betöltés...";
     if (hasEvents) return "Eseményeid";
     return "Még nincs egy eseményed sem";
-  }, [hasEvents]);
+  }, [hasEvents, loading]);
+
+  useEffect(() => {
+    loadEvents();
+  }, []);
+
+  async function loadEvents() {
+    try {
+      setError("");
+      setLoading(true);
+
+      const data = await apiRequest("/events", "GET");
+      setEvents(Array.isArray(data) ? data : data.events || []);
+    } catch (err) {
+      setError(err.message || "Nem sikerült betölteni az eseményeket.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   function openJoinModal() {
     setMenuOpen(false);
@@ -58,44 +57,70 @@ export default function Home() {
     setModalType("");
     setJoinCode("");
     setEventName("");
+    setError("");
   }
 
-  function handleJoinSubmit(e) {
+  async function handleJoinSubmit(e) {
     e.preventDefault();
-    if (!joinCode.trim()) return;
 
-    const iconTypes = ["spark", "grid", "pulse"];
-    const newEvent = {
-      id: Date.now(),
-      title: `Csatlakozott esemény (${joinCode.trim().toUpperCase()})`,
-      code: joinCode.trim().toUpperCase(),
-      members: 12,
-      role: "Tag",
-      iconType: iconTypes[events.length % iconTypes.length],
-    };
+    if (!joinCode.trim()) {
+      setError("Add meg az esemény kódját.");
+      return;
+    }
 
-    setEvents((prev) => [...prev, newEvent]);
-    closeModal();
+    try {
+      setError("");
+
+      await apiRequest("/events/join", "POST", {
+        joinCode: joinCode.trim().toUpperCase(),
+      });
+
+      closeModal();
+      await loadEvents();
+    } catch (err) {
+      setError(err.message || "Nem sikerült csatlakozni.");
+    }
   }
 
-  function handleCreateSubmit(e) {
+  async function handleCreateSubmit(e) {
     e.preventDefault();
-    if (!eventName.trim()) return;
 
-    const randomCode = Math.random().toString(36).slice(2, 8).toUpperCase();
+    if (!eventName.trim()) {
+      setError("Add meg az esemény nevét.");
+      return;
+    }
+
+    try {
+      setError("");
+
+      const data = await apiRequest("/events", "POST", {
+        name: eventName.trim(),
+      });
+
+      if (data.event) {
+        setEvents((prev) => [data.event, ...prev]);
+      } else {
+        await loadEvents();
+      }
+
+      closeModal();
+    } catch (err) {
+      setError(err.message || "Nem sikerült létrehozni az eseményt.");
+    }
+  }
+
+  function handleLogout() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("user");
+
+    navigate("/login");
+  }
+
+  function getIconType(index) {
     const iconTypes = ["spark", "grid", "pulse"];
-
-    const newEvent = {
-      id: Date.now(),
-      title: eventName.trim(),
-      code: randomCode,
-      members: 1,
-      role: "Tulajdonos",
-      iconType: iconTypes[events.length % iconTypes.length],
-    };
-
-    setEvents((prev) => [...prev, newEvent]);
-    closeModal();
+    return iconTypes[index % iconTypes.length];
   }
 
   return (
@@ -112,98 +137,127 @@ export default function Home() {
             <p className="home-eyebrow">CrewFlow</p>
             <h1>{titleText}</h1>
           </div>
+
+          <motion.button
+            className="ghost-button"
+            type="button"
+            onClick={handleLogout}
+            whileTap={{ scale: 0.985 }}
+          >
+            Kilépés
+          </motion.button>
         </motion.header>
 
-        {hasEvents ? (
+        {error && <div className="error">{error}</div>}
+
+        {!loading && hasEvents ? (
           <motion.section className="event-grid" variants={fadeUp}>
-            {events.map((event, index) => (
-              <motion.article
-                className="event-card"
-                key={event.id}
-                initial={{ opacity: 0, y: 18 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  duration: 0.34,
-                  delay: 0.05 + index * 0.06,
-                  ease: [0.22, 1, 0.36, 1],
-                }}
-                whileHover={{ y: -4, scale: 1.012 }}
-                whileTap={{ scale: 0.992 }}
-              >
-                <Link
-                  to={`/event/${event.id}`}
-                  style={{ textDecoration: "none", color: "inherit", display: "contents" }}
+            {events.map((event, index) => {
+              const iconType = event.iconType || getIconType(index);
+
+              return (
+                <motion.article
+                  className="event-card"
+                  key={event.id}
+                  initial={{ opacity: 0, y: 18 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    duration: 0.34,
+                    delay: 0.05 + index * 0.06,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                  whileHover={{ y: -4, scale: 1.012 }}
+                  whileTap={{ scale: 0.992 }}
                 >
-                  <div className="event-card__top">
-                    <span className="event-role">{event.role}</span>
-                    <span className="event-members">{event.members} fő</span>
-                  </div>
-
-                  <div className="event-card__body">
-                    <div className="event-card__icon">
-                      {event.iconType === "spark" && (
-                        <div className="icon-spark">
-                          <span />
-                          <span />
-                          <span />
-                        </div>
-                      )}
-
-                      {event.iconType === "grid" && (
-                        <div className="icon-grid">
-                          <span />
-                          <span />
-                          <span />
-                          <span />
-                        </div>
-                      )}
-
-                      {event.iconType === "pulse" && (
-                        <div className="icon-pulse">
-                          <span />
-                          <span />
-                          <span />
-                        </div>
-                      )}
+                  <Link
+                    to={`/event/${event.id}`}
+                    style={{
+                      textDecoration: "none",
+                      color: "inherit",
+                      display: "contents",
+                    }}
+                  >
+                    <div className="event-card__top">
+                      <span className="event-role">
+                        {event.role || "Tag"}
+                      </span>
+                      <span className="event-members">
+                        {event.members || event.memberCount || 1} fő
+                      </span>
                     </div>
 
-                    <h2>{event.title}</h2>
-                    <p>Kód: {event.code}</p>
-                  </div>
-                </Link>
-              </motion.article>
-            ))}
+                    <div className="event-card__body">
+                      <div className="event-card__icon">
+                        {iconType === "spark" && (
+                          <div className="icon-spark">
+                            <span />
+                            <span />
+                            <span />
+                          </div>
+                        )}
+
+                        {iconType === "grid" && (
+                          <div className="icon-grid">
+                            <span />
+                            <span />
+                            <span />
+                            <span />
+                          </div>
+                        )}
+
+                        {iconType === "pulse" && (
+                          <div className="icon-pulse">
+                            <span />
+                            <span />
+                            <span />
+                          </div>
+                        )}
+                      </div>
+
+                      <h2>{event.name || event.title}</h2>
+                      <p>Kód: {event.joinCode || event.code}</p>
+                    </div>
+                  </Link>
+                </motion.article>
+              );
+            })}
           </motion.section>
         ) : (
-          <motion.section className="empty-state" variants={fadeUp}>
-            <motion.div
-              className="empty-graphic"
-              aria-hidden="true"
-              animate={{ y: [0, -5, 0] }}
-              transition={{ duration: 5.8, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <div className="empty-graphic__circle" />
-              <div className="empty-graphic__spark spark-1" />
-              <div className="empty-graphic__spark spark-2" />
-              <div className="empty-graphic__spark spark-3" />
-            </motion.div>
+          !loading && (
+            <motion.section className="empty-state" variants={fadeUp}>
+              <motion.div
+                className="empty-graphic"
+                aria-hidden="true"
+                animate={{ y: [0, -5, 0] }}
+                transition={{
+                  duration: 5.8,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              >
+                <div className="empty-graphic__circle" />
+                <div className="empty-graphic__spark spark-1" />
+                <div className="empty-graphic__spark spark-2" />
+                <div className="empty-graphic__spark spark-3" />
+              </motion.div>
 
-            <h2>Még nem vagy tagja egy eseménynek sem</h2>
-            <p>
-              Csatlakozz egy meglévőhöz kóddal, vagy hozz létre egy újat pár
-              kattintással.
-            </p>
+              <h2>Még nem vagy tagja egy eseménynek sem</h2>
+              <p>
+                Csatlakozz egy meglévőhöz kóddal, vagy hozz létre egy újat pár
+                kattintással.
+              </p>
 
-            <motion.button
-              className="empty-plus-button"
-              onClick={() => setMenuOpen((prev) => !prev)}
-              aria-label="Esemény létrehozása vagy csatlakozás"
-              whileHover={{ y: -2, scale: 1.03 }}
-              whileTap={{ scale: 0.96 }}
-            >
-              +
-            </motion.button>
-          </motion.section>
+              <motion.button
+                className="empty-plus-button"
+                onClick={() => setMenuOpen((prev) => !prev)}
+                aria-label="Esemény létrehozása vagy csatlakozás"
+                whileHover={{ y: -2, scale: 1.03 }}
+                whileTap={{ scale: 0.96 }}
+              >
+                +
+              </motion.button>
+            </motion.section>
+          )
         )}
 
         {hasEvents && (
@@ -232,6 +286,7 @@ export default function Home() {
                 animate="animate"
                 exit="exit"
               />
+
               <motion.div
                 className={`action-menu ${hasEvents ? "action-menu--fab" : ""}`}
                 variants={popIn}
@@ -242,6 +297,7 @@ export default function Home() {
                 <motion.button whileTap={{ scale: 0.985 }} onClick={openJoinModal}>
                   Csatlakozás kóddal
                 </motion.button>
+
                 <motion.button whileTap={{ scale: 0.985 }} onClick={openCreateModal}>
                   Új esemény létrehozása
                 </motion.button>
@@ -262,6 +318,7 @@ export default function Home() {
                 animate="animate"
                 exit="exit"
               />
+
               <motion.div
                 className="modal-card"
                 variants={popIn}
@@ -284,6 +341,7 @@ export default function Home() {
                         placeholder="Pl. A7K9X2"
                         maxLength={12}
                       />
+
                       <div className="modal-actions">
                         <motion.button
                           type="button"
@@ -293,6 +351,7 @@ export default function Home() {
                         >
                           Mégse
                         </motion.button>
+
                         <motion.button
                           type="submit"
                           className="primary-button"
@@ -318,6 +377,7 @@ export default function Home() {
                         placeholder="Pl. Gólyabál szervezés"
                         maxLength={60}
                       />
+
                       <div className="modal-actions">
                         <motion.button
                           type="button"
@@ -327,6 +387,7 @@ export default function Home() {
                         >
                           Mégse
                         </motion.button>
+
                         <motion.button
                           type="submit"
                           className="primary-button"

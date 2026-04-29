@@ -1,10 +1,76 @@
 import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import "../styles/login.css";
 import { fadeUp, pageMotion } from "../lib/motion";
+import { apiRequest } from "../lib/api";
 
 export const Login = () => {
+  const navigate = useNavigate();
+
   const [showPw, setShowPw] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
+
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  function getLoginErrorMessage(message) {
+    const msg = String(message || "").toLowerCase();
+
+    if (
+      msg.includes("invalid") ||
+      msg.includes("wrong") ||
+      msg.includes("incorrect") ||
+      msg.includes("password") ||
+      msg.includes("not found") ||
+      msg.includes("hibás")
+    ) {
+      return "Hibás email cím vagy jelszó.";
+    }
+
+    if (msg.includes("network") || msg.includes("kapcsolódni")) {
+      return "Nem sikerült kapcsolódni a szerverhez.";
+    }
+
+    return "Sikertelen bejelentkezés. Ellenőrizd az adatokat.";
+  }
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    if (!email.trim() || !password.trim()) {
+      setError("Add meg az email címet és a jelszót.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const data = await apiRequest("/auth/login", "POST", {
+        email: email.trim(),
+        password,
+      });
+
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("user");
+
+      const storage = rememberMe ? localStorage : sessionStorage;
+
+      storage.setItem("token", data.token);
+      storage.setItem("user", JSON.stringify(data.user));
+
+      navigate("/home");
+    } catch (err) {
+      setError(getLoginErrorMessage(err.message));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <motion.div
@@ -12,28 +78,8 @@ export const Login = () => {
       variants={pageMotion}
       initial="initial"
       animate="animate"
-      exit="exit"
     >
-      <div className="atmo" aria-hidden="true">
-        <div className="fog" />
-        <div className="grain" />
-        <div className="vignette" />
-      </div>
-
       <main className="wrap">
-        <motion.div className="brand" variants={fadeUp}>
-          <motion.div
-            className="brandMark"
-            aria-hidden="true"
-            animate={{ y: [0, -3, 0] }}
-            transition={{ duration: 5.2, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <div className="brandTxt">
-            <div className="brandName">CrewFlow</div>
-            <div className="brandTag">Rendezvényszervezés, gyorsan egy helyen.</div>
-          </div>
-        </motion.div>
-
         <motion.section className="card" variants={fadeUp}>
           <div className="cardInner">
             <header className="head">
@@ -41,65 +87,74 @@ export const Login = () => {
               <div className="sub">Egy helyen minden eseményed.</div>
             </header>
 
-            <form className="form">
+            <form className="form" onSubmit={handleLogin}>
               <label className="field">
-                <span className="label">Email</span>
-                <motion.div className="inputWrap" whileFocus={{ scale: 1.005 }}>
+                <span>Email</span>
+
+                <div className="inputWrap">
                   <input
                     className="inputEl"
                     type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="nev@crewflow.app"
                     autoComplete="email"
-                    inputMode="email"
                   />
-                </motion.div>
+                </div>
               </label>
 
               <label className="field">
-                <span className="label">Jelszó</span>
+                <span>Jelszó</span>
+
                 <div className="pwRow">
-                  <motion.div className="inputWrap pwInputWrap" whileFocus={{ scale: 1.005 }}>
+                  <div className="inputWrap pwInputWrap">
                     <input
                       className="inputEl"
                       type={showPw ? "text" : "password"}
-                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                       autoComplete="current-password"
                     />
-                  </motion.div>
+                  </div>
 
-                  <motion.button
-                    className="pwBtn"
+                  <button
                     type="button"
-                    onClick={() => setShowPw((v) => !v)}
-                    aria-label={showPw ? "Jelszó elrejtése" : "Jelszó megjelenítése"}
-                    whileTap={{ scale: 0.96 }}
+                    className="pwBtn"
+                    onClick={() => setShowPw(!showPw)}
                   >
                     {showPw ? "Elrejt" : "Mutat"}
-                  </motion.button>
+                  </button>
                 </div>
               </label>
 
               <div className="row">
                 <label className="check">
-                  <input type="checkbox" />
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                  />
+
                   <span>Emlékezz rám</span>
                 </label>
 
-                <a className="link" href="#">
+                <Link className="link" to="/forgot-password">
                   Elfelejtetted?
-                </a>
+                </Link>
               </div>
 
-              <motion.button className="btn" type="submit" whileHover={{ y: -1 }} whileTap={{ scale: 0.985 }}>
-                Belépés
-                <span className="btnDot" aria-hidden="true" />
-              </motion.button>
+              {error && <div className="error">{error}</div>}
+
+              <button className="btn" disabled={loading} type="submit">
+                {loading ? "Belépés..." : "Belépés"}
+              </button>
 
               <div className="foot">
                 <span>Még nincs fiókod?</span>
-                <a className="link" href="/register">
+
+                <Link to="/register" className="link">
                   Regisztráció
-                </a>
+                </Link>
               </div>
             </form>
           </div>

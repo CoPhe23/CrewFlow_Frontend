@@ -11,8 +11,6 @@ export const Login = () => {
   const [showPw, setShowPw] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
-
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -59,10 +57,8 @@ export const Login = () => {
       sessionStorage.removeItem("token");
       sessionStorage.removeItem("user");
 
-      const storage = rememberMe ? localStorage : sessionStorage;
-
-      storage.setItem("token", data.token);
-      storage.setItem("user", JSON.stringify(data.user));
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
 
       navigate("/home");
     } catch (err) {
@@ -127,17 +123,7 @@ export const Login = () => {
                 </div>
               </label>
 
-              <div className="row">
-                <label className="check">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                  />
-
-                  <span>Emlékezz rám</span>
-                </label>
-
+              <div className="row rowSingle">
                 <Link className="link" to="/forgot-password">
                   Elfelejtetted?
                 </Link>

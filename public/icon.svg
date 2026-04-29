@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1e441e"></stop>
+      <stop offset="100%" stop-color="#0b1210"></stop>
+    </linearGradient>
+
+    <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e8c15a"></stop>
+      <stop offset="100%" stop-color="#2e6b3e"></stop>
+    </linearGradient>
+
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="blur"></feGaussianBlur>
+      <feMerge>
+        <feMergeNode in="blur"></feMergeNode>
+        <feMergeNode in="SourceGraphic"></feMergeNode>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- háttér -->
+  <rect width="64" height="64" rx="18" fill="url(#g1)"></rect>
+
+  <!-- "flow / levél / láng" -->
+  <path d="M32 10 
+       C22 20, 20 32, 32 54 
+       C44 32, 42 20, 32 10 Z" fill="url(#g2)" filter="url(#glow)"></path>
+
+  <!-- belső fény vonal -->
+  <path d="M32 16 
+       C26 26, 26 34, 32 48" stroke="#ffffff22" stroke-width="2" fill="none"></path>
+</svg>

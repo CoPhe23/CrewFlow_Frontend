@@ -370,3 +370,6 @@
     height: 46px;
   }
 }
+.rowSingle {
+  justify-content: flex-end;
+}

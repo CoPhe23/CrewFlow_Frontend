@@ -536,3 +536,53 @@
     max-height: calc(100dvh - 28px);
   }
 }
+
+
+/* ===== RESPONSIVE LOGOUT ===== */
+.home-logout-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.home-logout-icon {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .home-logout-text {
+    display: none;
+  }
+
+  .home-logout-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    border: 1px solid rgba(150, 42, 42, 0.58);
+    background:
+      radial-gradient(80px 60px at 35% 20%, rgba(255, 95, 95, 0.12), transparent 70%),
+      rgba(42, 10, 10, 0.42);
+    color: #ff6666;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    font-size: 25px;
+    line-height: 1;
+    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.24);
+    transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+  }
+
+  .home-logout-icon:hover {
+    background:
+      radial-gradient(80px 60px at 35% 20%, rgba(255, 95, 95, 0.18), transparent 70%),
+      rgba(68, 18, 18, 0.62);
+    border-color: rgba(255, 105, 105, 0.7);
+    transform: translateY(-1px);
+  }
+
+  .home-logout-icon svg {
+    display: block;
+    filter: drop-shadow(0 0 7px rgba(255, 85, 85, 0.34));
+  }
+}

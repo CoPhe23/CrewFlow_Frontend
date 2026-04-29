@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
+import { MdOutlineLogout } from "react-icons/md";
 import "../styles/home.css";
 import { apiRequest } from "../lib/api";
 import { backdropFade, fadeUp, pageMotion, popIn } from "../lib/motion";
@@ -138,14 +139,27 @@ export default function Home() {
             <h1>{titleText}</h1>
           </div>
 
-          <motion.button
-            className="ghost-button"
-            type="button"
-            onClick={handleLogout}
-            whileTap={{ scale: 0.985 }}
-          >
-            Kilépés
-          </motion.button>
+          <div className="home-logout-actions">
+            <motion.button
+              className="ghost-button home-logout-text"
+              type="button"
+              onClick={handleLogout}
+              whileTap={{ scale: 0.985 }}
+            >
+              Kilépés
+            </motion.button>
+
+            <motion.button
+              className="home-logout-icon"
+              type="button"
+              onClick={handleLogout}
+              aria-label="Kilépés"
+              title="Kilépés"
+              whileTap={{ scale: 0.94 }}
+            >
+              <MdOutlineLogout aria-hidden="true" />
+            </motion.button>
+          </div>
         </motion.header>
 
         {error && <div className="error">{error}</div>}

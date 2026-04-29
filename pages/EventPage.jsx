@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import "../styles/EventPage.css";
@@ -49,6 +49,7 @@ export default function EventPage() {
   const [posts, setPosts] = useState([]);
   const [chatMessages, setChatMessages] = useState([]);
   const [chatText, setChatText] = useState("");
+  const chatMessagesRef = useRef(null);
   const [participants, setParticipants] = useState([]);
 
   const [loading, setLoading] = useState(true);
@@ -56,6 +57,12 @@ export default function EventPage() {
   const [error, setError] = useState("");
 
   const isAdmin = event?.role === "ADMIN";
+
+  useEffect(() => {
+    if (activeTab !== "chat" || !chatMessagesRef.current) return;
+
+    chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight;
+  }, [chatMessages, activeTab]);
 
   useEffect(() => {
   let alive = true;
@@ -543,7 +550,7 @@ export default function EventPage() {
               animate="animate"
               exit="exit"
             >
-              <div className="chat-messages">
+              <div className="chat-messages" ref={chatMessagesRef}>
                 {chatMessages.length === 0 ? (
                   <div className="chat-bubble">
                     <p>Még nincs üzenet.</p>
@@ -555,7 +562,7 @@ export default function EventPage() {
                       className={message.own ? "chat-bubble own" : "chat-bubble"}
                     >
                       <div className="chat-bubble__meta">
-                        <span>{message.author}</span>
+                        {!message.own && <span>{message.author}</span>}
                         <span>{message.time}</span>
                       </div>
 

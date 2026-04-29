@@ -184,8 +184,8 @@ export default function SchedulePage() {
   }
 
   function openTaskDetails(taskId) {
-    setSelectedTaskId(taskId);
-    setShowMobileDetail(true);
+    setSelectedTaskId((currentId) => (currentId === taskId ? null : taskId));
+    setShowMobileDetail(false);
   }
 
   async function handleTaskSubmit(e) {
@@ -272,7 +272,6 @@ export default function SchedulePage() {
       setError(err.message || "Nem sikerült törölni.");
     }
   }
-
   if (loading) {
     return (
       <main className="schedule-page">
@@ -340,7 +339,7 @@ export default function SchedulePage() {
             {isAdmin && (
               <motion.button
                 type="button"
-                className="schedule-create-button"
+                className="schedule-create-button schedule-create-button--desktop"
                 onClick={openCreateTaskModal}
                 whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.97 }}
@@ -352,6 +351,19 @@ export default function SchedulePage() {
         </motion.header>
 
         {error && <div className="error">{error}</div>}
+
+        <div className="schedule-mobile-control-row">
+          {isAdmin && (
+            <motion.button
+              type="button"
+              className="schedule-create-button schedule-create-button--mobile"
+              onClick={openCreateTaskModal}
+              whileHover={{ y: -1 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              + Új blokk
+            </motion.button>
+          )}
 
         <motion.section className="schedule-overview" variants={fadeUp}>
           <motion.button
@@ -365,8 +377,9 @@ export default function SchedulePage() {
             whileHover={{ y: -2 }}
             whileTap={{ scale: 0.985 }}
           >
-            <p>Feladatok</p>
-            <h2>{tasks.length}</h2>
+            <span className="overview-card__icon" aria-hidden="true">✓</span>
+            <span className="overview-card__label">Feladatok</span>
+            <span className="overview-card__count">{tasks.length}</span>
           </motion.button>
 
           <motion.button
@@ -380,8 +393,9 @@ export default function SchedulePage() {
             whileHover={{ y: -2 }}
             whileTap={{ scale: 0.985 }}
           >
-            <p>Helyszínek</p>
-            <h2>{uniqueLocations.length}</h2>
+            <span className="overview-card__icon" aria-hidden="true">⌖</span>
+            <span className="overview-card__label">Helyszínek</span>
+            <span className="overview-card__count">{uniqueLocations.length}</span>
           </motion.button>
 
           <motion.button
@@ -395,10 +409,12 @@ export default function SchedulePage() {
             whileHover={{ y: -2 }}
             whileTap={{ scale: 0.985 }}
           >
-            <p>Emberek</p>
-            <h2>{participants.length}</h2>
+            <span className="overview-card__icon" aria-hidden="true">◉</span>
+            <span className="overview-card__label">Emberek</span>
+            <span className="overview-card__count">{participants.length}</span>
           </motion.button>
         </motion.section>
+        </div>
 
         <AnimatePresence initial={false}>
           {insightOpen && (
@@ -528,16 +544,14 @@ export default function SchedulePage() {
               {viewMode === "timeline" ? (
                 <motion.div
                   key="timeline"
-                  className="timeline-list"
+                  className={tasks.length === 0 ? "timeline-list timeline-list--empty" : "timeline-list"}
                   variants={tabPanel}
                   initial="initial"
                   animate="animate"
                   exit="exit"
                 >
                   {tasks.length === 0 ? (
-                    <div className="task-table-card">
-                      <p>Még nincs feladat ebben a beosztásban.</p>
-                    </div>
+                    <p className="empty-task-card">Még nincs feladat ebben a beosztásban.</p>
                   ) : (
                     tasks.map((task, index) => {
                       const isOpen = selectedTaskId === task.id;
@@ -592,6 +606,29 @@ export default function SchedulePage() {
                               )}
                             </div>
                           </motion.button>
+
+                          <AnimatePresence initial={false}>
+                            {isOpen && (
+                              <motion.div
+                                className={`mobile-inline-detail ${task.color}`}
+                                initial={{ opacity: 0, height: 0, y: -8 }}
+                                animate={{ opacity: 1, height: "auto", y: 0 }}
+                                exit={{ opacity: 0, height: 0, y: -8 }}
+                                transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                              >
+                                <TaskDetails
+                                  task={task}
+                                  participantMap={participantMap}
+                                  getMapsUrl={getMapsUrl}
+                                  isAdmin={isAdmin}
+                                  onEdit={() => openEditTaskModal(task)}
+                                  onComplete={() => handleCompleteTask(task.id)}
+                                  onReopen={() => handleReopenTask(task.id)}
+                                  onDelete={() => handleDeleteTask(task.id)}
+                                />
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
                         </motion.div>
                       );
                     })
@@ -614,7 +651,7 @@ export default function SchedulePage() {
                   </div>
 
                   {tasks.length === 0 ? (
-                    <p>Még nincs blokk.</p>
+                    <p className="empty-table-message">Még nincs blokk.</p>
                   ) : (
                     tasks.map((task, index) => (
                       <motion.button
@@ -684,7 +721,7 @@ export default function SchedulePage() {
         </motion.section>
 
         <AnimatePresence>
-          {showMobileDetail && selectedTask && (
+          {false && showMobileDetail && selectedTask && (
             <>
               <motion.button
                 type="button"
